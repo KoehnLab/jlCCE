@@ -1,5 +1,10 @@
 module jlCCE
 
+export SpinSystem, cce
+
+using AtomsIO
+using Unitful
+
 # physical constants
 const hbar = 1.054571817e-34 # J s -- CODATA 2022 (rounded value)
 
@@ -11,16 +16,16 @@ mutable struct SpinSystem
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
-    # g factor at the center (x,y,z)
-    g_factor::Vector{Float64}(missing,3)
+    ## g factor at the center (x,y,z)
+    g_factor::Vector{Float64}
     # magnetic axes of spin center (column vectors for x, y, z direction)
-    magnetic_axes::Matrix{Float64}(missing,3,3)
+    magnetic_axes::Matrix{Float64}
     # nuclei defining spin bath ("H", etc.)
     nuc_spin_bath::String
     # corresponding nuclear g factor
     gn_spin_bath::Float64
     # magnetic field
-    B0::Vector{Float64}(missing,3)
+    B0::Vector{Float64}
     # minimum interaction radius (usually 0.)
     r_min::Float64
     # maximum interaction radius
@@ -32,19 +37,36 @@ mutable struct SpinSystem
     n_time_step::Int
 end
 
+# convenient constructor with defaults for all but the first 3 one
+SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
+    coord_file,spin_center,spin_center_index,
+    [2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],"H",5.58569468,
+    [0.,0.,1.],0.0,50.0,0.0,1e-3,25)
+
 """
     cce(system::SpinSystem)
 
     explanatory text goes here
 """
 function cce(system::SpinSystem)
+    # just some output for demo purposes (delete/modify later)
+    print("Coordinates will be read from: ",system.coord_file,"\n")
     # load coordinates
+    crystal = load_system(system.coord_file)
+    lattice = ustrip.(crystal.bounding_box)
+    print("lattice vectors:\n")
+    print(lattice[1],"\n")
+    print(lattice[2],"\n")
+    print(lattice[3],"\n")
+
     # identify spin center
     # get list of spin bath nuclei
     
     # precompute A values for electron nucleus pairs (function call)
 
     # initialize Intensity to 1. for all times
+    time = collect(range(system.t_min,system.t_max,system.n_time_step))
+    intensity = ones(system.n_time_step)
     # double loop m>n over nuclear pairs
         # call a function to:
         # compute b, c, omega for each pair, no need to store on array
@@ -52,6 +74,7 @@ function cce(system::SpinSystem)
         # probabaly best: compute Intensity = Intensity .* exp(v)
 
     # return intensity and time
+    return time, intensity
 end
 
 end
