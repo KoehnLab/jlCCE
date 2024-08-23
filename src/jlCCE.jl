@@ -11,7 +11,10 @@ import .readCIF
 
 # physical constants
 const hbar = 1.054571817e-34 # J s -- CODATA 2022 (rounded value)
-const hbar_cgs = 1.054571817e-27 # erg s (erg = g cm^2/s^2) 
+# Bohr magneton 
+const mu_b = 9.274010066e-24 # J T^-1 -- CODATA 2022 (rounded value)
+# nuclear magneton
+const mu_n = 5.050783739e-27 # J T^-1 -- CODATA 2022 (rounded value)
 
 # struct to hold parameters for the run
 mutable struct SpinSystem
@@ -54,15 +57,8 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     explanatory text goes here
 """
 function cce(system::SpinSystem)
-    # just some output for demo purposes (delete/modify later)
+    # check cif file
     print("Coordinates will be read from: ",system.coord_file,"\n")
-    # load coordinates
-    #crystal = load_system(system.coord_file)
-    #lattice = ustrip.(crystal.bounding_box)
-    #print("lattice vectors:\n")
-    #print(lattice[1],"\n")
-    #print(lattice[2],"\n")
-    #print(lattice[3],"\n")
 
     # identify spin center
     if system.spin_center == "V"
@@ -107,9 +103,20 @@ function cce(system::SpinSystem)
     print("Distance between the electron spin center and the nuclear spins: \n")
     print(distance_coordinates_el_nucs) 
 
-    # precompute A values for electron nucleus pairs (function call)
-    
+    # calculation of the gryomagnetic ratio 
+    gamma_electron = (system.g_factor * mu_b) / hbar
+    gamma_n = (system.gn_spin_bath * mu_n) / hbar
 
+    # precompute A values for electron nucleus pairs
+    A_n::Vector{Float64} = zeros(size(distance_coordinates_el_nucs)[1])
+    for i in 1:size(distance_coordinates_el_nucs)[1]
+        r_i_x_B0 = cross(distance_coordinates_el_nucs[i], system.B0)
+        r_i_dot_B0 = dot(distance_coordinates_el_nucs[i], system.B0)
+        theta_i = atan(norm(r_i_x_B0), r_i_dot_B0)
+        r_i_norm[i] = norm(distance_coordinates_el_nucs[i]) 
+        A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
+   end
+   return A_n
 
 
     # initialize Intensity to 1. for all times
