@@ -74,7 +74,7 @@ function cce(system::SpinSystem)
         exit()
     end 
 
-    # identify nuc spin bath 
+    # identify nuclear spin bath 
     if system.nuc_spin_bath == "H"
         atomic_number_nuclei = 1
     else 
@@ -88,20 +88,29 @@ function cce(system::SpinSystem)
     lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
         get_coordinates(system.coord_file,atomic_number_metal,atomic_number_nuclei)
 
+    print("lattice vectors:\n")
+    print(lattice[1],"\n")
+    print(lattice[2],"\n")
+    print(lattice[3],"\n")
+
     # call function set_supercell_list: determine the cell list
     cell_list = set_supercell_list(system.r_max,lattice)
-    
+
+    print("cell list: \n")
+    print(cell_list,"\n")
+
     # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins 
     distance_coordinates_el_nucs = 
         get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
     
+    print("Distance between the electron spin center and the nuclear spins: \n")
+    print(distance_coordinates_el_nucs) 
 
-
-
-
-        
     # precompute A values for electron nucleus pairs (function call)
+    
+
+
 
     # initialize Intensity to 1. for all times
     time = collect(range(system.t_min,system.t_max,system.n_time_step))
