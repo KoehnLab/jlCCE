@@ -6,7 +6,7 @@ using AtomsIO
 using Unitful
 
 # import the jl file to read cif files 
-#   --> export: coordinates_nuclear_spins, distance_coordinates_el_nucs
+#   --> export: distance_coordinates_el_nucs
 import .readCIF
 
 # physical constants
@@ -38,7 +38,7 @@ mutable struct SpinSystem
     r_min::Float64
     # maximum interaction radius
     r_max::Float64
-    # min and maxiumum of time interval
+    # minimum and maxiumum of time interval
     t_min::Float64
     t_max::Float64
     # number of time steps in interval
@@ -53,6 +53,12 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
 
 """
     cce(system::SpinSystem)
+
+input: Spinsystem - cif file of the spin system, name of the metal spin center,
+        index of the metal atom, g factor of the central spin, magnetic axes of 
+        the spin center, nuclei defining spin center, corresponding nuclear g 
+        factor, magnetic field, maximun und manimum radius around the spin center
+
 
     explanatory text goes here
 """
