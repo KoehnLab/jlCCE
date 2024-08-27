@@ -136,13 +136,13 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
          
             # restricted 
             if distance_el_nucs > r_min && distance_el_nucs <= r_max
-                #push!(coordinates_nuclear_spins,coords_nuclear_spins) 
+                push!(coordinates_nuclear_spins,coords_nuclear_spins) 
                 push!(distance_coordinates_el_nucs, distance_coords_el_nucs)
             end
         end
         
     end
-    return distance_coordinates_el_nucs
+    return coordinates_nuclear_spins,distance_coordinates_el_nucs
 
 end
    
