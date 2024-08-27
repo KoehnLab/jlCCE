@@ -3,7 +3,7 @@ push!(LOAD_PATH,"../src")
 using jlCCE
 
 # set system - use the simple constructor
-voacac2 = SpinSystem("voacac2.cif","V",1)  # <--- note: put this file into the folder
+voacac2 = SpinSystem("vmnt3.cif","V",1)  # <--- note: put this file into the folder
 
 # modify the values (SpinSystem creates a mutable object):
 voacac2.g_factor = [2.3,2.3,2.3]  # isotropic here
