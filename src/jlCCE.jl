@@ -1,13 +1,16 @@
 module jlCCE
 
+#push!(LOAD_PATH,".")
+
 export SpinSystem, cce
 
 using AtomsIO
 using Unitful
+using LinearAlgebra
 
 # import the jl file to read cif files 
 #   --> export: distance_coordinates_el_nucs
-import .readCIF
+using readCIF
 
 # physical constants
 const hbar = 1.054571817e-34 # J s -- CODATA 2022 (rounded value)
@@ -103,26 +106,29 @@ function cce(system::SpinSystem)
 
     # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins 
-    distance_coordinates_el_nucs = 
+    distance_coordinates_el_nucs,n_nuc = 
         get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
     
-    print("Distance between the electron spin center and the nuclear spins: \n")
-    print(distance_coordinates_el_nucs) 
+    #print("Distance between the electron spin center and the nuclear spins: \n")
+    #print(distance_coordinates_el_nucs) 
+    print("Number of bath nuclei: ",n_nuc,"\n")
 
     # calculation of the gryomagnetic ratio 
-    gamma_electron = (system.g_factor * mu_b) / hbar
+    gamma_electron = (system.g_factor[1] * mu_b) / hbar
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
 
+
     # precompute A values for electron nucleus pairs
-    A_n::Vector{Float64} = zeros(size(distance_coordinates_el_nucs)[1])
+    A_n = zeros(n_nuc)
     for i in 1:size(distance_coordinates_el_nucs)[1]
         r_i_x_B0 = cross(distance_coordinates_el_nucs[i], system.B0)
         r_i_dot_B0 = dot(distance_coordinates_el_nucs[i], system.B0)
         theta_i = atan(norm(r_i_x_B0), r_i_dot_B0)
-        r_i_norm[i] = norm(distance_coordinates_el_nucs[i]) 
+        r_i_norm = norm(distance_coordinates_el_nucs[i]) 
+        #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
    end
-   return A_n
+   
 
 
     # initialize Intensity to 1. for all times
@@ -133,6 +139,10 @@ function cce(system::SpinSystem)
         # compute b, c, omega for each pair, no need to store on array
         # compute v for all t values of simulation (for this m,n)
         # probabaly best: compute Intensity = Intensity .* exp(v)
+
+    
+
+
 
     # return intensity and time
     return time, intensity
