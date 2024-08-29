@@ -128,8 +128,6 @@ function cce(system::SpinSystem)
         #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
    end
-   
-
 
     # initialize Intensity to 1. for all times
     time = collect(range(system.t_min,system.t_max,system.n_time_step))
@@ -140,7 +138,22 @@ function cce(system::SpinSystem)
         # compute v for all t values of simulation (for this m,n)
         # probabaly best: compute Intensity = Intensity .* exp(v)
 
-    
+    for n in 1:size(distance_coordinates_el_nucs)[1]-1
+        for m in n+1:size(distance_coordinates_el_nucs)[1]
+            r_nm = (coordinates_nuclear_spins[m] .- coordinates_nuclear_spins[n]) * 10^-8
+            r_nm_x_B0 = cross(r_nm, B0)
+            r_nm_dot_B0 = dot(r_nm, B0)
+            theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
+            b_nm = -0.25 .* gamma_n.^2 .* hbar .* (1 .- 3 .* cos(theta_nm).^2) ./ norm(r_nm).^3
+            c_nm = (A_n[n] - A_n[m]) / (4 * b_nm)
+            w_nm = 2 * b_nm * sqrt(1 + c_nm.^2)
+            for j in 1:size(time)[1]
+                v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * t[j]) - 1)^2
+                    #sim[j] = sum(v_nm) 
+                intensity = intensity .* exp.(v_nm)
+            end 
+        end
+    end        
 
 
 
