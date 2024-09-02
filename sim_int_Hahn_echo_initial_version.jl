@@ -3,7 +3,7 @@ using LinearAlgebra
 using Printf
 using DelimitedFiles
 using Serialization
-using Plots
+#using Plots
 using MKL
 using BenchmarkTools
 using CSV
@@ -14,15 +14,15 @@ begin
 function parameters()
     nuc::String = "H"
     B0::Vector{Float64} = [0.0, 0.0, 1.0]
-    t::Vector{Float64} = collect(range(0, 1.5*10^-5, length=30))
+    t::Vector{Float64} = collect(range(0, 1.5*10^-5, length=10))
     radius_min::Float64 = 0.0
     radius_max::Float64 = 5.0
     hbar::Float64 = 1.054571817*10^-27
-    mu_n::Float64 = 5.0507866*10^-24
+    mu_n::Float64 = 5.050783739e-24
     g_n::Float64 = 5.585694680000000
     gamma_n::Float64 = (g_n * mu_n) / hbar
-    mu_b::Float64 = 9.27400968*10^-21
-    g_e::Float64 = 2.25
+    mu_b::Float64 = 9.274010066e-21
+    g_e::Float64 = 1.9846
     gamma_electron::Float64 = (g_e * mu_b) / hbar
     return nuc, B0, t, radius_min, radius_max, hbar, gamma_n, gamma_electron
 end
@@ -65,8 +65,8 @@ function def_molecule()
         coord_electron = [15.2913 21.2973 38.0247]
         metal = "V"
     elseif molecule == "vmnt3"
-        # xyzfile = "/home/suchaneck/masterarbeit/molecular_structures/vmnt3.xyz"
-        xyzfile = "C:\\Users\\sucha\\MATLAB Drive\\molecular_structures\\vmnt3.xyz"
+        xyzfile = "/home/suchaneck/masterarbeit/xyz_files_crystal_structure/vmnt3.xyz"
+        #xyzfile = "C:\\Users\\sucha\\MATLAB Drive\\molecular_structures\\vmnt3.xyz"
         coord_electron = [39.7660 33.4080 31.8062]
         metal = "V"
     else molecule == "vopc"
@@ -133,7 +133,7 @@ function calculate_A_n(coords_nuc_restricted::Array{Float64},r_i::Array{Float64}
          r_i_norm[i] = norm(r_i[i,:]) 
          A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i[i])^2) / r_i_norm[i]^3
     end
-    return A_n
+    return A_n,r_i_norm
 end
 
 
@@ -163,6 +163,9 @@ function calculate_v_nm_sim(A_n::Vector{Float64},t::Vector{Float64},b_nm::Matrix
             for m in n+1:size(A_n)[1]
                 c_nm = (A_n[n] - A_n[m]) / (4 * b_nm[n, m])
                 w_nm = 2 * b_nm[n, m] * sqrt(1 + c_nm.^2)
+                print("b_nm: ",b_nm[n,m],"\n")
+                print("c_nm: ",c_nm,"\n")
+                print("w_nm: ",w_nm,"\n")
                 v_nm[n, m] = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * t[j]) - 1)^2
             end
         end
@@ -180,15 +183,23 @@ end
 end
 
 function main()
+    print("starting main \n")
     nuc::String, B0::Vector{Float64}, t::Vector{Float64}, radius_min::Float64, radius_max::Float64, hbar::Float64, gamma_n::Float64, gamma_electron::Float64 = parameters()
+    print("gamma el: ",gamma_electron,"\n")
+    print("gamma n: ",gamma_n,"\n")
     xyzfile::String, coord_electron::Matrix{Float64}, metal::String = def_molecule()
+    print("xyz file: ",xyzfile,"\n")
     coords_nuc::Matrix{Float64} = read_geom(xyzfile, nuc)
     r_e_norm::Vector{Float64} = calculate_r_e(coords_nuc,coord_electron)
     coords_nuc_restricted::Matrix{Float64} = determine_coords_nuc_restricted(radius_min,radius_max,r_e_norm,coords_nuc)
     display("Number of nuclei:")
     display(size(coords_nuc_restricted)[1])
     r_i::Matrix{Float64} = calculate_r_i(coords_nuc_restricted,coord_electron)
-    A_n::Vector{Float64} = calculate_A_n(coords_nuc_restricted,r_i,B0,gamma_n,gamma_electron,hbar)
+    print("Distance between the electron spin center and the nuclear spins: \n")
+    print(r_i,"\n")
+    A_n::Vector{Float64},r_i_norm = calculate_A_n(coords_nuc_restricted,r_i,B0,gamma_n,gamma_electron,hbar)
+    print("A_n:",A_n,"\n")
+    print("Distance between el spin and nuc spins: ", r_i_norm,"\n")
     b_nm::Matrix{Float64} = calculate_b_nm(coords_nuc_restricted,gamma_n,B0,hbar)
     sim::Vector{Float64} = calculate_v_nm_sim(A_n,t,b_nm)
     intensity::Vector{Float64} = calculate_intensity(sim)
@@ -196,6 +207,7 @@ function main()
 end
 
 @time intensity, t = main();
+print("intensity: ",intensity,"\n")
 
 # safe data as csv file
 # writedlm("/home/suchaneck/masterarbeit/decoherence_decay_curves/int_vodpm2_30.csv",intensity)
