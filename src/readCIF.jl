@@ -34,12 +34,12 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,atomic_number
     # atoms  = atomic_symbol(system)
     # atomic numbers for identifying spin centers
     atomic_n = atomic_number(system)
-    print("atomic_n:",atomic_n,"\n")
+    #print("atomic_n:",atomic_n,"\n")
     
     # get the coordinates of the spin center on the metal atom
     idx_metal_atom = findfirst(x -> x==atomic_number_metal,atomic_n)
-    print("test-idx_metal_atom:",idx_metal_atom,"\n")
-    print("atomic_number_matal:", atomic_number_metal,"\n")  
+    #print("test-idx_metal_atom:",idx_metal_atom,"\n")
+    #print("atomic_number_matal:", atomic_number_metal,"\n")  
     coord_electron_spin = coords_atoms_unit_cell[idx_metal_atom]
 
     # get the coordinates of all bath spins
@@ -121,9 +121,9 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
     cell_list = set_supercell_list(r_max,lattice)
 
     # initialize outputs lists for spin bath
-    coordinates_nuclear_spins = Vector{}[]
+    #coordinates_nuclear_spins = Vector{}[]
     distance_coordinates_el_nucs = Vector{}[]
-    distance_coordinates_nuc_nuc = Vector{}[]
+    #distance_coordinates_nuc_nuc = Vector{}[]
     n_nuc = 0
 
     # loop over cell list
