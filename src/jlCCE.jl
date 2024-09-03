@@ -8,11 +8,12 @@ using AtomsIO
 using Unitful
 using LinearAlgebra
 
-# import the jl file to read cif files 
-#   --> export: distance_coordinates_el_nucs
+# import the readCIF.jl file to read cif files 
+#   --> export: distance_coordinates_el_nucs, n_nuc
 using readCIF
 
 # physical constants
+# reduced Planck constant 
 const hbar = 1.054571817e-27 # erg s -- J s -- CODATA 2022 (rounded value)
 # Bohr magneton 
 const mu_b = 9.274010066e-21 # erg G^-1 J T^-1 -- CODATA 2022 (rounded value)
@@ -62,8 +63,13 @@ input: Spinsystem - cif file of the spin system, name of the metal spin center,
         the spin center, nuclei defining spin center, corresponding nuclear g 
         factor, magnetic field, maximun und manimum radius around the spin center
 
+simulate the Hahn echo intensity using the second-order cluster expantion 
 
-    explanatory text goes here
+Lit.: Witzel, W. M.; Das Sarma, S. Quantum theory for electron spin decoherence in-
+duced by nuclear spin dynamics in semiconductor quantum computer architectures:
+Spectral diffusion of localized electron spins in the nuclear solid-state environment.
+Phys. Rev. B 2006, 74, 035322
+
 """
 function cce(system::SpinSystem)
     # check cif file
@@ -78,6 +84,7 @@ function cce(system::SpinSystem)
         print("Error currently only V and Cu")
         exit()
     end 
+    print("Current metal of the spin center: ",system.spin_center,"\n")
 
     # identify nuclear spin bath 
     if system.nuc_spin_bath == "H"
@@ -86,8 +93,10 @@ function cce(system::SpinSystem)
         print("Error only proton bath")
         exit()
     end
+    print("Considered nuclear spins od the spin bath: ",system.spin_center,"\n")
 
-    # get list of spin bath nuclei
+    # get list of spin bath nuclei using the module readCIF
+
     # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
         # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
     lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
@@ -105,24 +114,26 @@ function cce(system::SpinSystem)
     print(cell_list,"\n")
 
     # call function get_bath_list: determine the distance coordinates between the electron spin center
-        # and the nuclear spins 
+        # and the nuclear spins and the number of considered nuclear spins in the spin bath
     distance_coordinates_el_nucs,n_nuc = 
         get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
-    # rescale distance coords to cm 
-    distance_coordinates_el_nucs = distance_coordinates_el_nucs .* 1e-8
 
-    print("Number of bath nuclei: ",n_nuc,"\n")
+    print("Number of bath nuclei: ",n_nuc,"\n")   
+
+    # rescale distance coordinates from AA to cm (cgs unit system)
+    rescale_factor_cgs = 1e-8
+    distance_coordinates_el_nucs = distance_coordinates_el_nucs .* rescale_factor_cgs
+
     print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     print(distance_coordinates_el_nucs,"\n") 
     
-
-    # calculation of the gryomagnetic ratio 
+    # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
     gamma_electron = (system.g_factor[1] * mu_b) / hbar
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
-    print("gamma el: ",gamma_electron,"\n")
-    print("gamma n: ",gamma_n,"\n")
+    #print("gamma el: ",gamma_electron,"\n")
+    #print("gamma n: ",gamma_n,"\n")
 
-    # precompute A values for electron nucleus pairs
+    # precompute values of the hyperfine coupling constant A for electron nucleus pairs
     A_n = zeros(n_nuc)
     for i in 1:size(distance_coordinates_el_nucs)[1]
         r_i_x_B0 = cross(distance_coordinates_el_nucs[i], system.B0)
@@ -135,28 +146,18 @@ function cce(system::SpinSystem)
    end
    print("A_n:",A_n,"\n")
 
-    # initialize Intensity to 1. for all times
+    # set time for the simulation
     time = collect(range(system.t_min,system.t_max,system.n_time_step))
-    intensity = ones(system.n_time_step)
-    # double loop m>n over nuclear pairs
-        # call a function to:
-        # compute b, c, omega for each pair, no need to store on array
-        # compute v for all t values of simulation (for this m,n)
-        # probabaly best: compute Intensity = Intensity .* exp(v)
 
-    #coordinates_nuclear_spins = Vector{}[] 
-    #for i in eachindex(distance_coordinates_el_nucs)
-     #   coords_nuclear_spins = distance_coordinates_el_nucs[i] + coord_electron_spin
-     #   push!(coordinates_nuclear_spins,coord_electron_spin)
-    #end 
-    #print("coord nuc spins: ",coordinates_nuclear_spins,"\n")
-    
-    # loop over all pairs of bath nuclei
+    # initialize Intensity to 1. for all times
+    intensity = ones(system.n_time_step)
+
+    # compute the coupling constant b and the values of c and omega for each pair of bath nuclei 
+    # compute the pair intensity for all t values of the simulation for each pair of bath nuclei 
+    # compute the intensity for each t value using the pair intensities
     for n in 1:n_nuc-1
         for m in n+1:n_nuc
             r_nm = (distance_coordinates_el_nucs[m] - distance_coordinates_el_nucs[n]) 
-            #print("coord nuc m: ",coordinates_nuclear_spins[m],"\n")
-            #print("coord nuc n: ",coordinates_nuclear_spins[n],"\n")
             r_nm_x_B0 = cross(r_nm, system.B0)
             r_nm_dot_B0 = dot(r_nm, system.B0)
             theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
@@ -170,13 +171,10 @@ function cce(system::SpinSystem)
             for j in 1:size(time)[1]
                 v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time[j]) - 1)^2
                 #print("v_nm: ",v_nm,"\n")
-                    #sim[j] = sum(v_nm) 
                 intensity[j] = intensity[j] * exp(v_nm)
             end 
         end
     end        
-
-
 
     # return intensity and time
     return time, intensity
