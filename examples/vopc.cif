@@ -1,0 +1,142 @@
+
+#######################################################################
+#
+#                 Cambridge Crystallographic Data Centre
+#                                CCDC 
+#
+#######################################################################
+#
+# If this CIF has been generated from an entry in the Cambridge 
+# Structural Database, then it will include bibliographic, chemical, 
+# crystal, experimental, refinement or atomic coordinate data resulting 
+# from the CCDC's data processing and validation procedures.
+#
+#######################################################################
+
+data_CSD_CIF_VPHTHC
+_audit_creation_date 1981-03-19
+_audit_creation_method CSD-ConQuest-V1
+_database_code_CSD VPHTHC
+_chemical_formula_sum 'C32 H16 N8 O1 V1'
+_chemical_formula_moiety
+;
+C32 H16 N8 O1 V1
+;
+_journal_coden_Cambridge 186
+_journal_year 1980
+_journal_page_first 2300
+_journal_name_full 'J.Chem.Soc.,Dalton Trans. '
+loop_
+_publ_author_name
+"R.F.Ziolo"
+"C.H.Griffiths"
+"J.M.Troup"
+_chemical_name_systematic
+;
+Phthalocyaninato-oxo-vanadium
+;
+_cell_volume   1211.706
+_exptl_crystal_density_diffrn 1.588
+_exptl_special_details
+;
+polymorph ii
+y/b(C23)=-0.2004 (not +0.2004) y/b(C26)=-0.2246 (not -0.2446)
+
+;
+_diffrn_ambient_temperature ?
+_diffrn_special_details
+;
+The study was carried out at room temperature,in the range 283-303K
+
+;
+#These two values have been output from a single CSD field.
+_refine_ls_R_factor_gt 0.062
+_refine_ls_wR_factor_gt 0.062
+_symmetry_cell_setting triclinic
+_symmetry_space_group_name_H-M 'P -1'
+_symmetry_Int_Tables_number 2
+loop_
+_symmetry_equiv_pos_site_id
+_symmetry_equiv_pos_as_xyz
+1 x,y,z
+2 -x,-y,-z
+_cell_length_a 12.027(6)
+_cell_length_b 12.571(8)
+_cell_length_c 8.690(5)
+_cell_angle_alpha 96.04(5)
+_cell_angle_beta 94.80(5)
+_cell_angle_gamma 68.20(5)
+_cell_formula_units_Z 2
+loop_
+_atom_type_symbol
+_atom_type_radius_bond
+C 0.68
+H 0.23
+N 0.68
+O 0.68
+V 1.29
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+V1 V 0.21739 0.01491 -0.15030
+O1 O 0.30180 -0.05110 -0.28690
+N1 N 0.07490 0.13400 -0.24890
+N2 N 0.26670 0.14860 -0.06430
+N3 N 0.29810 -0.05830 0.04630
+N4 N 0.10540 -0.07150 -0.13590
+N5 N 0.14050 0.29720 -0.22700
+N6 N 0.41230 0.06150 0.13860
+N7 N 0.22250 -0.21320 0.03870
+N8 N -0.05460 0.02600 -0.32120
+C1 C -0.02340 0.11700 -0.32600
+C2 C -0.09440 0.21460 -0.41100
+C3 C -0.19580 0.23790 -0.50760
+C4 C -0.24040 0.34220 -0.57300
+C5 C -0.18560 0.42310 -0.53690
+C6 C -0.08410 0.40010 -0.44120
+C7 C -0.03810 0.29530 -0.37920
+C8 C 0.06640 0.24340 -0.28090
+C9 C 0.23030 0.25300 -0.12670
+C10 C 0.30130 0.31800 -0.05010
+C11 C 0.29650 0.42840 -0.06820
+C12 C 0.37170 0.46810 0.02990
+C13 C 0.45100 0.39930 0.13530
+C14 C 0.45770 0.28880 0.15360
+C15 C 0.38000 0.24980 0.05510
+C16 C 0.35620 0.14330 0.04720
+C17 C 0.38360 -0.03080 0.14060
+C18 C 0.44260 -0.11830 0.24510
+C19 C 0.53170 -0.12970 0.36010
+C20 C 0.56630 -0.22390 0.44390
+C21 C 0.51310 -0.30690 0.41250
+C22 C 0.42290 -0.29590 0.30000
+C23 C 0.38790 -0.20040 0.21510
+C24 C 0.29640 -0.15980 0.09440
+C25 C 0.13340 -0.16970 -0.06200
+C26 C 0.04770 -0.22460 -0.11570
+C27 C 0.03740 -0.32500 -0.07510
+C28 C -0.05290 -0.35570 -0.15540
+C29 C -0.13080 -0.28940 -0.26160
+C30 C -0.12380 -0.18640 -0.29900
+C31 C -0.03220 -0.15580 -0.22030
+C32 C 0.00470 -0.05900 -0.23370
+H1 H -0.23200 0.18900 -0.51900
+H2 H -0.31800 0.36500 -0.63900
+H3 H -0.22500 0.49200 -0.57200
+H4 H -0.05500 0.44800 -0.41800
+H5 H 0.23900 0.47900 -0.13400
+H6 H 0.36000 0.54200 0.03400
+H7 H 0.50200 0.43100 0.20000
+H8 H 0.51100 0.24300 0.22500
+H9 H 0.55900 -0.07700 0.38300
+H10 H 0.62900 -0.24000 0.52400
+H11 H 0.54800 -0.37400 0.48600
+H12 H 0.38800 -0.35100 0.27100
+H13 H 0.08600 -0.37200 0.00300
+H14 H -0.05400 -0.42300 -0.13200
+H15 H -0.19500 -0.31000 -0.32500
+H16 H -0.17700 -0.14800 -0.37700
+#END
