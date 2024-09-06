@@ -49,7 +49,7 @@ mutable struct SpinSystem
     n_time_step::Int
 end
 
-# convenient constructor with defaults for all but the first 3 one
+# convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     coord_file,spin_center,spin_center_index,
     [2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],"H",5.58569468,
