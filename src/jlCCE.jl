@@ -7,6 +7,7 @@ export SpinSystem, cce
 using AtomsIO
 using Unitful
 using LinearAlgebra
+using BenchmarkTools
 
 # import the readCIF.jl file to read cif files 
 #   --> export: distance_coordinates_el_nucs, n_nuc
@@ -80,10 +81,13 @@ function cce(system::SpinSystem)
         atomic_number_metal = 23
     elseif system.spin_center == "Cu"
         atomic_number_metal = 29
+    elseif system.spin_center == "Pd"
+        atomic_number_metal = 46
     else 
-        print("Error currently only V and Cu")
+        print("Error currently only V, Cu and Pd")
         exit()
     end 
+    print("\n")
     print("Current metal of the spin center: ",system.spin_center,"\n")
 
     # identify nuclear spin bath 
@@ -93,7 +97,8 @@ function cce(system::SpinSystem)
         print("Error only proton bath")
         exit()
     end
-    print("Considered nuclear spins od the spin bath: ",system.spin_center,"\n")
+    print("Considered nuclear spins od the spin bath: ",system.nuc_spin_bath,"\n")
+    print("\n")
 
     # get list of spin bath nuclei using the module readCIF
 
@@ -117,15 +122,17 @@ function cce(system::SpinSystem)
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
     distance_coordinates_el_nucs,n_nuc = 
         get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
-
+    
+    print("\n")
     print("Number of bath nuclei: ",n_nuc,"\n")   
+    print("\n")
 
     # rescale distance coordinates from AA to cm (cgs unit system)
     rescale_factor_cgs = 1e-8
     distance_coordinates_el_nucs = distance_coordinates_el_nucs .* rescale_factor_cgs
 
-    print("Distance coordinates between the electron spin center and the nuclear spins: \n")
-    print(distance_coordinates_el_nucs,"\n") 
+    #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
+    #print(distance_coordinates_el_nucs,"\n") 
     
     # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
     gamma_electron = (system.g_factor[1] * mu_b) / hbar
@@ -135,19 +142,22 @@ function cce(system::SpinSystem)
 
     # precompute values of the hyperfine coupling constant A for electron nucleus pairs
     A_n = zeros(n_nuc)
+    print("Distance between el spin and nuc spins: \n") 
     for i in 1:size(distance_coordinates_el_nucs)[1]
         r_i_x_B0 = cross(distance_coordinates_el_nucs[i], system.B0)
         r_i_dot_B0 = dot(distance_coordinates_el_nucs[i], system.B0)
         theta_i = atan(norm(r_i_x_B0), r_i_dot_B0)
         r_i_norm = norm(distance_coordinates_el_nucs[i])
-        print("Distance between el spin and nuc spins: ", r_i_norm,"\n") 
+        print(r_i_norm,"\n") 
         #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
    end
+   print("\n")
    print("A_n:",A_n,"\n")
+   print("\n")
 
     # set time for the simulation
-    time = collect(range(system.t_min,system.t_max,system.n_time_step))
+    time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
 
     # initialize Intensity to 1. for all times
     intensity = ones(system.n_time_step)
@@ -168,8 +178,8 @@ function cce(system::SpinSystem)
             #print("b_nm: ",b_nm,"\n")
             #print("c_nm: ",c_nm,"\n")
             #print("w_nm: ",w_nm,"\n")
-            for j in 1:size(time)[1]
-                v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time[j]) - 1)^2
+            for j in 1:size(time_hahn_echo)[1]
+                v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                 #print("v_nm: ",v_nm,"\n")
                 intensity[j] = intensity[j] * exp(v_nm)
             end 
@@ -177,7 +187,7 @@ function cce(system::SpinSystem)
     end        
 
     # return intensity and time
-    return time, intensity
+    return time_hahn_echo,intensity
 end
 
 end
