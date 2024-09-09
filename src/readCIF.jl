@@ -23,8 +23,8 @@ returns: lattice - lattice vectors of the crystal
 function get_coordinates(cif_file::String,atomic_number_metal::Int,atomic_number_nuclei::Int)
     # extract relevant information from CIF
     system = load_system(cif_file)
-    print("cif file:",cif_file,"\n")
-    print("system:",system,"\n")
+    #print("cif file:",cif_file,"\n")
+    print("System: ",system,"\n")
 
     # coordinates in unit cell and translation vectors (lattice)
     coords_atoms_unit_cell = ustrip.(position(system))
