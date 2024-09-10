@@ -84,7 +84,7 @@ function cce(system::SpinSystem)
     elseif system.spin_center == "Pd"
         atomic_number_metal = 46
     else 
-        print("Error currently only V, Cu and Pd")
+        print("Error currently only V, Cu and Pd \n")
         exit()
     end 
     print("\n")
@@ -94,10 +94,10 @@ function cce(system::SpinSystem)
     if system.nuc_spin_bath == "H"
         atomic_number_nuclei = 1
     else 
-        print("Error only proton bath")
+        print("Error only proton bath \n")
         exit()
     end
-    print("Considered nuclear spins od the spin bath: ",system.nuc_spin_bath,"\n")
+    print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
     print("\n")
 
     # get list of spin bath nuclei using the module readCIF
@@ -153,7 +153,7 @@ function cce(system::SpinSystem)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
    end
    print("\n")
-   print("A_n:",A_n,"\n")
+   print("Hyperfine coupling constants:",A_n,"\n")
    print("\n")
 
     # set time for the simulation
