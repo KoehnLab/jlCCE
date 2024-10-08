@@ -19,14 +19,25 @@ spinsystem.g_factor = [1.9846,1.9846,1.9846]  # isotropic here
 #voacac2.gn_spin_bath = 5.58569468
 spinsystem.B0 = [0.,0.,1.]
 spinsystem.r_min = 0.
-spinsystem.r_max = 20. # AA
+r_max = range(4.5,35.5,length=150) # AA
 spinsystem.t_min = 0.
 spinsystem.t_max = 1.5e-5 # s
 spinsystem.n_time_step = 20
 
 
 # run
-time_hahn_echo,intensity = cce(spinsystem)
+#intensity = zeros(20,size(r_max)[1])
+for i in 1:size(r_max)[1]
+    spinsystem.r_max = r_max[i]
+    print("r_max: ",r_max,"\n")
+    intensity = cce(spinsystem)
+    print("\n")
+    print("Simulated intensity: ",intensity,"\n")
+    print("\n")
+end
+
+
+
 
 #print("\n")
 #print("Our great result:\n")
