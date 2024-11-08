@@ -1,5 +1,9 @@
 module SpinBase
 
+using LinearAlgebra
+
+export unit_mat, sz_mat, sp_mat, sm_mat, sy_mat, sx_mat
+
 """
     unit_mat(dim)
 
@@ -66,7 +70,7 @@ function sm_mat(S::Float64)
     dim = convert(Integer,(2. * S + 1.))
     smat = zeros(ComplexF64,dim,dim)
     SSp1 = S * (S + 1.)
-    M = S - 1.
+    M = S
     for ii = 2:dim
         smat[ii,ii-1] = sqrt(SSp1 - M * (M - 1.))
         M = M - 1.
@@ -85,7 +89,7 @@ See also [`sy_mat`](@ref), [`sz_mat`](@ref), [`sp_mat`](@ref), [`sm_mat`](@ref).
 
 """
 function sx_mat(S::Float64)
-    return sp_mat(S) + sm_mat(S)
+    return 0.5*(sp_mat(S) + sm_mat(S))
 end
 
 """
@@ -99,7 +103,7 @@ See also [`sx_mat`](@ref), [`sz_mat`](@ref), [`sp_mat`](@ref), [`sm_mat`](@ref).
 
 """
 function sy_mat(S::Float64)
-    return -im * (sp_mat(S) - sm_mat(S))
+    return -0.5im * (sp_mat(S) - sm_mat(S))
 end
 
 
