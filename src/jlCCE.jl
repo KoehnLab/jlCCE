@@ -751,8 +751,8 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
             Threads.@spawn begin
                 int_block = ones(n_time_step)
                 for ipair in block
-                    n = pair_list[ipair,1]
-                    m = pair_list[ipair,2]
+                    n = pair_list[ipair][1]
+                    m = pair_list[ipair][2]
 
                     r1 = distance_el_nuc_traf[n]
                     r2 = distance_el_nuc_traf[m]
