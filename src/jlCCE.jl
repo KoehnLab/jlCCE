@@ -7,11 +7,13 @@ export SpinSystem, cce
 using AtomsIO
 using Unitful
 using LinearAlgebra
+# using ExponentialUtilities  # needed? try Base.exp for a start
 using BenchmarkTools
 
 # import the readCIF.jl file to read cif files 
 #   --> export: distance_coordinates_el_nucs, n_nuc
 using readCIF
+using SpinBase
 
 # physical constants
 # reduced Planck constant 
@@ -20,6 +22,8 @@ const hbar = 1.054571817e-27 # erg s -- J s -- CODATA 2022 (rounded value)
 const mu_b = 9.274010066e-21 # erg G^-1 J T^-1 -- CODATA 2022 (rounded value)
 # nuclear magneton
 const mu_n = 5.050783739e-24 # erg G^-1  J T^-1 -- CODATA 2022 (rounded value)
+# conversion AA to cm (cgs unit system)
+const aacm = 1e-8
 
 # struct to hold parameters for the run
 mutable struct SpinSystem
@@ -29,12 +33,19 @@ mutable struct SpinSystem
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
+    # type of simulation
+    simulation_type::String
+    use_exp::Bool
+    # spin quantum number
+    s_el::Float64
     # g factor at the center (x,y,z)
     g_factor::Vector{Float64}
     # magnetic axes of spin center (column vectors for x, y, z direction)
     magnetic_axes::Matrix{Float64}
     # nuclei defining spin bath ("H", etc.)
     nuc_spin_bath::String
+    # spin quantum number of nuclei
+    s_nuc::Float64
     # corresponding nuclear g factor
     gn_spin_bath::Float64
     # magnetic field
@@ -43,6 +54,8 @@ mutable struct SpinSystem
     r_min::Float64
     # maximum interaction radius
     r_max::Float64
+    # maximum distance of two bath spins
+    r_max_bath::Float64
     # minimum and maxiumum of time interval
     t_min::Float64
     t_max::Float64
@@ -53,8 +66,10 @@ end
 # convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     coord_file,spin_center,spin_center_index,
-    [2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],"H",5.58569468,
-    [0.,0.,1.],0.0,50.0,0.0,1e-3,25)
+    "highfield_analytic",true,
+    0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
+    "H",0.5,5.58569468,
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
 
 """
     cce(system::SpinSystem)
@@ -73,121 +88,699 @@ Phys. Rev. B 2006, 74, 035322
 
 """
 function cce(system::SpinSystem)
-    # check cif file
-    print("Coordinates will be read from: ",system.coord_file,"\n")
 
-    # identify spin center
-    if system.spin_center == "V"
-        atomic_number_metal = 23
-    elseif system.spin_center == "Cu"
-        atomic_number_metal = 29
-    elseif system.spin_center == "Pd"
-        atomic_number_metal = 46
-    else 
-        print("Error currently only V, Cu and Pd \n")
-        exit()
-    end 
-    print("\n")
-    print("Current metal of the spin center: ",system.spin_center,"\n")
+    if system.coord_file != "test"
+        # check cif file
+        print("Coordinates will be read from: ",system.coord_file,"\n")
 
-    # identify nuclear spin bath 
-    if system.nuc_spin_bath == "H"
-        atomic_number_nuclei = 1
-    else 
-        print("Error only proton bath \n")
-        exit()
-    end
-    print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
-    print("\n")
+        # identify spin center
+        if system.spin_center == "V"
+            atomic_number_metal = 23
+        elseif system.spin_center == "Cu"
+            atomic_number_metal = 29
+        elseif system.spin_center == "Pd"
+            atomic_number_metal = 46
+        else 
+            print("Error currently only V, Cu and Pd \n")
+            exit()
+        end 
+        print("\n")
+        print("Current metal of the spin center: ",system.spin_center,"\n")
 
-    # get list of spin bath nuclei using the module readCIF
+        # identify nuclear spin bath 
+        if system.nuc_spin_bath == "H"
+            atomic_number_nuclei = 1
+        else 
+            print("Error only proton bath \n")
+            exit()
+        end
+        print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
+        print("\n")
 
-    # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
-        # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-    lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
-        get_coordinates(system.coord_file,atomic_number_metal,atomic_number_nuclei)
+        # get list of spin bath nuclei using the module readCIF
 
-    print("lattice vectors:\n")
-    print(lattice[1],"\n")
-    print(lattice[2],"\n")
-    print(lattice[3],"\n")
+        # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
+            # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
+        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
+            get_coordinates(system.coord_file,atomic_number_metal,atomic_number_nuclei)
 
-    # call function set_supercell_list: determine the cell list
-    cell_list = set_supercell_list(system.r_max,lattice)
+        print("lattice vectors:\n")
+        print(lattice[1],"\n")
+        print(lattice[2],"\n")
+        print(lattice[3],"\n")
 
-    print("cell list: \n")
-    print(cell_list,"\n")
+        # call function set_supercell_list: determine the cell list
+        cell_list = set_supercell_list(system.r_max,lattice)
 
-    # call function get_bath_list: determine the distance coordinates between the electron spin center
+        print("cell list: \n")
+        print(cell_list,"\n")
+
+        # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
-    distance_coordinates_el_nucs,n_nuc = 
-        get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
+        distance_coordinates_el_nucs,n_nuc = 
+            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
     
+    else   # test
+        n_nuc = 5
+        distance_coordinates_el_nucs = []
+
+        print("Entered test mode")
+
+        # test - 1 OK
+        #push!(distance_coordinates_el_nucs,[20.,4.,4.])
+        #push!(distance_coordinates_el_nucs,[23.,5.,4.])
+        #push!(distance_coordinates_el_nucs,[7.,26.,0.])
+        #push!(distance_coordinates_el_nucs,[7.,25.,2.])
+        #push!(distance_coordinates_el_nucs,[4.,25.,2.])
+
+        # test 2
+        n_nuc=2
+        push!(distance_coordinates_el_nucs,[2.938,-2.936,-1.057])
+        push!(distance_coordinates_el_nucs,[1.145,-3.225, 2.987])
+
+#        [2.9380000000000002e-8, -2.9359999999999996e-8, -1.0570000000000005e-8]
+#        [1.1449999999999992e-8, -3.225e-8, 2.987000000000001e-8]
+#        [2.9380000000000002e-8, 2.844000000000001e-8, -1.0570000000000005e-8]
+#        [1.1449999999999992e-8, 2.555e-8, 2.987000000000001e-8]
+#        [3.826e-8, 4.160000000000001e-9, 1.5229999999999998e-8]
+#        [3.26e-8, -1.3289999999999997e-8, 4.000000000000004e-10]
+#        [1.4860000000000002e-8, -3.3499999999999973e-9, -3.8650000000000005e-8]
+    end
+
+    print("This is jlCCE, running on ",Threads.nthreads()," threads")
+
     print("\n")
     print("Number of bath nuclei: ",n_nuc,"\n")   
     print("\n")
 
     # rescale distance coordinates from AA to cm (cgs unit system)
-    rescale_factor_cgs = 1e-8
-    distance_coordinates_el_nucs = distance_coordinates_el_nucs .* rescale_factor_cgs
+    distance_coordinates_el_nucs = distance_coordinates_el_nucs .* aacm
 
     #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     #print(distance_coordinates_el_nucs,"\n") 
+
+    #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
     # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
-    gamma_electron = (system.g_factor[1] * mu_b) / hbar
+    gamma_electron = system.g_factor .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
     #print("gamma el: ",gamma_electron,"\n")
     #print("gamma n: ",gamma_n,"\n")
 
-    # precompute values of the hyperfine coupling constant A for electron nucleus pairs
-    A_n = zeros(n_nuc)
-    print("Distance between el spin and nuc spins: \n") 
-    for i in 1:size(distance_coordinates_el_nucs)[1]
-        r_i_x_B0 = cross(distance_coordinates_el_nucs[i], system.B0)
-        r_i_dot_B0 = dot(distance_coordinates_el_nucs[i], system.B0)
-        theta_i = atan(norm(r_i_x_B0), r_i_dot_B0)
-        r_i_norm = norm(distance_coordinates_el_nucs[i])
-        print(r_i_norm,"\n") 
-        #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
-        A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
-   end
-   print("\n")
-   print("Hyperfine coupling constants:",A_n,"\n")
-   print("\n")
-
     # set time for the simulation
     time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
 
-    # initialize Intensity to 1. for all times
-    intensity = ones(system.n_time_step)
+    if system.simulation_type == "highfield_analytic"
 
+        # test settings
+        err = false
+        if system.s_el != 0.5 || system.s_nuc != 0.5
+            print("Error: Analytic approach is only for spin-1/2 nuclei\n")
+            print("   Found: s_el = ",system.s_el,"  s_nuc = ",system.s_nuc,"\n")
+            err = true
+        end
+        if norm(system.B0)<1e-10
+            print("Error: Too small field applied (zero field?)\n")
+            print("   Found: B0 = ",system.B0,"\n")
+            err = true
+        end
+        if system.g_factor[1] != system.g_factor[2] || system.g_factor[1] != system.g_factor[3]
+            print("Error: Analytic approach only for isotropic spin\n")
+            print("    Found: g_factor = ",system.g_factor,"\n")
+            err = true
+        end
+        if err
+            error("Unsuitable settings found (see above)")
+        end
+
+        intensity,iCCE1,iCCE2 = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
+    elseif system.simulation_type == "exact"
+        intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
+             system.s_nuc,gamma_n,system.s_el,gamma_electron,system.magnetic_axes,system.B0,time_hahn_echo)
+    else
+        print("Unkonwn simulation type: ",system.simulation_type,"\n")
+        intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
+    end
+
+    # return intensity and time
+    return time_hahn_echo,intensity,iCCE1,iCCE2
+end
+
+"""
+    cce_hf_analytic(distance_coordinates_el_nucs,gamma_n,gamma_electron,B0,time_hahn_echo)
+
+should be called by cce (rather than directly); distance_coordinates_el_nucs are the distances 
+of the bath nuclei from the spin center, gamma_n and gamma_electron the respective gyromagnetic 
+rations required for computing the dipolar interaction, B0 is the magnetic field direction,
+time_hahn_echo the time set for which the signal is to be computed
+
+the function returns the intensity for the given time set
+"""
+function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
+
+    n_time_step = size(time_hahn_echo)
+
+    # precompute values of the hyperfine coupling constant A for electron nucleus pairs
+    A_n = zeros(n_nuc)
+    #print("Distance between el spin and nuc spins: \n") 
+    for i in 1:size(distance_coordinates_el_nucs)[1]
+        r_i_x_B0 = cross(distance_coordinates_el_nucs[i], B0)
+        r_i_dot_B0 = dot(distance_coordinates_el_nucs[i], B0)
+        theta_i = atan(norm(r_i_x_B0), r_i_dot_B0)
+        r_i_norm = norm(distance_coordinates_el_nucs[i])
+        #print(r_i_norm,"\n") 
+        #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
+        A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
+    end
+    minA = minimum(abs.(A_n))
+    maxA = maximum(abs.(A_n))
+    print("\n")
+    print("Hyperfine coupling constants (min, max): ",minA,"  ",maxA,"\n")
+    print("\n")
+    
+    # initialize Intensity to 1. for all times
+    intensity = ones(n_time_step)
+    
     # compute the coupling constant b and the values of c and omega for each pair of bath nuclei 
     # compute the pair intensity for all t values of the simulation for each pair of bath nuclei 
     # compute the intensity for each t value using the pair intensities
     for n in 1:n_nuc-1
         for m in n+1:n_nuc
             r_nm = (distance_coordinates_el_nucs[m] - distance_coordinates_el_nucs[n]) 
-            r_nm_x_B0 = cross(r_nm, system.B0)
-            r_nm_dot_B0 = dot(r_nm, system.B0)
+            r_nm_x_B0 = cross(r_nm, B0)
+            r_nm_dot_B0 = dot(r_nm, B0)
             theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
             b_nm = -0.25 * gamma_n^2 * hbar * (1 - 3 * cos(theta_nm)^2) / norm(r_nm)^3
-            c_nm = (A_n[n] - A_n[m]) / (4 * b_nm)
-            w_nm = 2 * b_nm * sqrt(1 + c_nm^2)
-            #print("r_nm: ",r_nm,"\n")
-            #print("b_nm: ",b_nm,"\n")
-            #print("c_nm: ",c_nm,"\n")
-            #print("w_nm: ",w_nm,"\n")
-            for j in 1:size(time_hahn_echo)[1]
-                v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
-                #print("v_nm: ",v_nm,"\n")
-                intensity[j] = intensity[j] * exp(v_nm)
+            c_nm = (A_n[n] - A_n[m]) / (4. * b_nm)
+            w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
+            if use_exp
+                for j in 1:size(time_hahn_echo)[1]
+                    v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
+                    intensity[j] = intensity[j] * exp(v_nm)
+                end
+            else
+                for j in 1:size(time_hahn_echo)[1]
+                    v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
+                    intensity[j] = intensity[j] * (1 + v_nm)
+                end
             end 
         end
     end        
+    
+    # return dummies for CCE1 and CCE2
+    int1 = ones(n_time_step) 
+    return intensity, int1, intensity
+end
 
-    # return intensity and time
-    return time_hahn_echo,intensity
+"""
+    hyperfine(gamma_ten,gamma_n,r)
+
+compute the hyperfine interaction tensor (dipole approximation) based on the gyromagnetic 
+tensor of the electron (gamma_ten = mu_b/hbar * g_tensor) and the (isotropic) nuclear 
+magnetic moment gamma_n. r is the distance.
+NOTE: non isotropic electron moments are not yet debugged!
+"""
+function hyperfine(gamma_ten,gamma_n,r)
+
+
+    dist = norm(r)
+    rn = r ./ dist
+    fact = gamma_n*hbar / dist^3
+    
+    A = fact*(I(3) - 3 * rn*transpose(rn))
+
+    At = transpose(gamma_ten) * A 
+
+    return At 
+end
+
+"""
+    print_matrix(title,mat)
+
+print a title and the matrix (using display function)
+"""
+function print_matrix(title,mat)
+
+    print(title,"\n")
+    display(mat)
+    print("\n")
+
+end
+
+
+"""
+    n_e_contribution(various args)
+
+core routine for "exact" propagation of 2-particle system (internal use only)
+"""
+function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,rho0,time_he)
+
+    dim = dim_nuc*dim_el
+    nt = size(time_he)[1]
+
+    # spin H for 2 spin system
+    S1 = unit_mat(dim_el)
+    I1 = unit_mat(dim_nuc)
+
+    # interaction contribution
+    Hmat = zeros(dim,dim)
+    for i in 1:3
+        for j in 1:3
+            Hmat += kron(Smat[i],Imat[j]).*A_1[i,j]
+        end
+    end
+
+    #print_matrix("Hmat:",Hmat)
+
+    # add magnetic contribution
+    Hmat += Hmag
+
+    #print_matrix("Hmag:",Hmag)
+
+    # Sx operator for spin (emulating ideal π pulse)
+    sigmaX = kron(Smat[1],I1)*2
+
+    mx = tr(Mmat[1]*rho0)
+    my = tr(Mmat[2]*rho0)
+
+    #print_matrix("rho0",rho0)
+
+    # initial signal
+    signal_0 = 2*real(mx+1im*my)
+
+    signal = zeros(nt)
+    for idx in 1:nt
+
+        Arg = - (1im * time_he[idx]) * Hmat
+        Ut = exp(Arg)
+
+        U = Ut * sigmaX * Ut
+
+        rho_tau = U * rho0 * adjoint(U)
+
+        mx = tr(Mmat[1]*rho_tau)
+        my = tr(Mmat[2]*rho_tau)
+
+        signal[idx] = 2*real(mx+1im*my)/signal_0
+        
+    end
+
+    return signal
+
+end
+
+
+
+"""
+    n_n_e_contribution(various args)
+
+core routine for "exact" propagation of 3-particle system (internal use only)
+"""
+function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Imat,rho0,time_he)
+
+    dim = dim_nuc^2*dim_el
+    nt = size(time_he)[1]
+
+    # spin H for 3 spin system
+    S1 = unit_mat(dim_el)
+    I1 = unit_mat(dim_nuc)
+
+    # spin-spin coupling
+    dist = norm(r12)
+    rn = r12 ./ dist
+    fact = gamma_n^2*hbar/dist^3
+
+    B = fact * (I(3) - 3 * rn*transpose(rn))
+
+    #print_matrix("A1",A_1)
+    #print_matrix("A2",A_2)
+    #print_matrix("B",B)
+
+    # interaction contribution
+    Hmat = zeros(dim,dim)
+    for i in 1:3
+        for j in 1:3
+            Hmat += kron(Smat[i],kron(Imat[j],I1)).*A_1[i,j]
+            Hmat += kron(Smat[i],kron(I1,Imat[j])).*A_2[i,j]
+            Hmat += kron(S1,kron(Imat[i],Imat[j])).*B[i,j]
+        end
+    end
+
+    #print_matrix("Hmat:",Hmat)
+
+    # add magnetic contribution
+    Hmat += Hmag
+
+    #print_matrix("Hmag:",Hmag)
+
+    # Sx operator for spin (emulating ideal π pulse)
+    sigmaX = kron(Smat[1],kron(I1,I1))*2
+
+    mx = tr(Mmat[1]*rho0)
+    my = tr(Mmat[2]*rho0)
+
+    #print_matrix("rho0",rho0)
+
+    # initial signal
+    signal_0 = 2*real(mx+1im*my)
+
+    signal = zeros(nt)
+    for idx in 1:nt
+
+        Arg = - (1im * time_he[idx]) * Hmat
+        Ut = exp(Arg)
+
+        U = Ut * sigmaX * Ut
+
+        rho_tau = U * rho0 * adjoint(U)
+
+        mx = tr(Mmat[1]*rho_tau)
+        my = tr(Mmat[2]*rho_tau)
+
+        signal[idx] = 2*real(mx+1im*my)/signal_0
+        
+    end
+
+    return signal
+
+end
+
+
+function is_unit(mat,thr)
+
+    nd = ndims(mat)
+    if nd != 2 
+        return false
+    end
+    nd1 = size(mat,1)
+    nd2 = size(mat,2)
+    if nd1 != nd2
+        return false
+    end
+    OK = true
+    for i in 1:nd1
+        for j in 1:nd2
+            if i==j && abs(mat[i,i]-1.0)>thr
+                OK = false
+            end
+            if i!=j && abs(mat[i,j])>thr
+                OK = false
+            end
+        end
+    end
+    return OK
+end
+
+"""
+    get_rot_for_unit_vector(uvec)
+
+returns a rotation matrix that transforms vector (0,0,1) into uvec
+"""
+function get_rot_for_unit_vector(uvec)
+
+    # get the direction cosine and sines
+    costh = min(1.,max(-1.,uvec[3]))
+    sinth = sqrt(1. - costh^2)
+    if abs(sinth)>1e-9
+        cosphi = min(1.,max(-1.,uvec[1]/sinth))
+        sinphi = sqrt(1. - cosphi^2)
+        if uvec[2] < 0.
+            sinphi *= -1
+        end
+    else
+        cosphi=1.
+        sinphi=0.
+    end
+
+    # rotation around y by theta
+    yrot = [[costh,0.,sinth] [0.,1.,0.] [-sinth,0.,costh]]
+    # rotation around z by -phi
+    zrot = [[cosphi,-sinphi,0.] [sinphi,cosphi,0.] [0.,0.,1.]]
+
+    # total rotation matrix
+    Rot = zrot * yrot
+
+    return Rot
+
+end
+
+"""
+    make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+
+make a list of all pairs of bath spins that are considered, where r_max_bath is the
+max. distance to be considered.
+Return a list of unique pairs and a list which states to how many pairs a given spin 
+contributes 
+"""
+function make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+
+    n_nuc = size(distance_coordinates_el_nucs,1)
+
+    n_pairs = 0
+    pair_list = []
+    n_pair_contr = zeros(Int, n_nuc)
+
+    for i = 1:n_nuc-1
+        for j = i+1:n_nuc
+            r12 = distance_coordinates_el_nucs[i] - distance_coordinates_el_nucs[j]
+            if norm(r12) > r_max_bath
+                continue
+            end
+
+            n_pairs += 1
+
+            push!(pair_list,[i,j])
+
+            n_pair_contr[i] += 1
+            n_pair_contr[j] += 1
+
+        end
+    end
+
+    return n_pairs,pair_list,n_pair_contr
+
+end
+
+
+function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
+    s_nuc,gamma_n,s_el,gamma_el,mag_axes,B0,time_hahn_echo)
+
+    if ! is_unit(mag_axes,1e-8)
+        print("non unit magnetic axes not yet debugged!")
+        error("non unit magentic axes not yet debugged!")
+    end
+
+    n_time_step = size(time_hahn_echo)
+
+    intensity = ones(n_time_step)
+    intensity_CCE1 = ones(n_time_step)
+    intensity_CCE2 = ones(n_time_step)
+    intensity_correction = ones(n_time_step)
+
+    # Here, it is more convenient to keep the magnetic field at (0,0,1) and to
+    # transform the nuclear coordinates
+    
+    # field strength
+    Bstrength = norm(B0)
+
+    Rmat = get_rot_for_unit_vector(B0/Bstrength)
+
+    print("Found this field: ",B0,"\n")
+
+    print("Transforming by:\n")
+    display(Rmat)
+    print("\n\n")
+
+    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+
+    print("Total number of pairs in bath: ",n_nuc*(n_nuc+1)÷2,"\n")
+    print("Screened number of CCE2 pairs: ",n_pairs,"\n")
+    print("Screening distance was: ",r_max_bath/aacm," Å\n")
+
+    B00 = [0.,0.,Bstrength]
+
+    # transform coordinates
+    distance_el_nuc_traf = []
+    for coord in distance_coordinates_el_nucs
+        coord_traf = transpose(Rmat) * coord
+        push!(distance_el_nuc_traf,coord_traf)
+    end
+
+    mag_axes_t = transpose(Rmat) * mag_axes
+
+    # "g tensor" from gamma and magnetic axes
+    gamma_t = zeros(3,3)
+    gamma_t[1,1] = gamma_el[1]; gamma_t[2,2] = gamma_el[2]; gamma_t[3,3] = gamma_el[3] 
+    gamma_t = mag_axes_t * gamma_t * transpose(mag_axes_t)
+
+    print("gamma_t: ",gamma_t,"\n")
+
+    print("gamma_n: ",gamma_n,"\n")
+    
+    print("\n")
+    print("computing hyperfine couplings ...\n")
+
+    A_list = []
+    for n in 1:n_nuc
+        r1 = distance_el_nuc_traf[n]
+        A_current = hyperfine(gamma_t,gamma_n,r1)
+        push!(A_list,A_current)
+    end
+
+    dim_el = trunc(Int,(2*s_el+1))
+    dim_nuc = trunc(Int,(2*s_nuc+1))
+
+    Smat = []
+    push!(Smat,sx_mat(s_el))
+    push!(Smat,sy_mat(s_el))
+    push!(Smat,sz_mat(s_el))
+    S1 = unit_mat(dim_el)
+
+    Imat = []
+    push!(Imat,sx_mat(s_nuc))
+    push!(Imat,sy_mat(s_nuc))
+    push!(Imat,sz_mat(s_nuc))
+    I1 = unit_mat(dim_nuc)
+
+    # initial spin state |+><+| (max. comp along X)
+    if s_el == 0.5
+        rho0_el = ones(2,2).*0.5
+    else
+        error("S>0.5 not yet implemented")
+        # TODO: diagonalize Sx and get eigenvector for -M state == |+> ; rho = |+><+|
+    end
+        
+    # initial nuclear state: all M equal likely (kT >> delta E)
+    rho0_nuc = I1.*(1. / trunc(Int,2*s_nuc+1) )
+    
+    do_singles = true
+    if do_singles
+        # CCE1 contrubutions
+        print("\n")
+        print("Computing CCE1 contributions...\n")
+
+        dimH1 = dim_el * dim_nuc
+
+        # set magnetic interaction matrix
+        Mmat1 = []
+        for i = 1:3
+            mat = zeros(dimH1,dimH1)
+            # needs to be updated for non-isotropic g
+            mat += kron(Smat[i],I1).*gamma_t[i,i]
+            mat += kron(S1,Imat[i]).*gamma_n
+            push!(Mmat1,mat)
+        end
+
+        # magnetic field contribution is universal
+        Hmag1 = zeros(dimH1,dimH1)
+        B0t = gamma_t * B0
+        for i = 1:3
+            Hmag1 += kron(Smat[i],I1).*B0t[i]
+            Hmag1 += kron(S1,Imat[i]).*(B0[i]*gamma_n)
+        end
+
+        # set initial density matrix for 2-particle system    
+        rho0 = kron(rho0_el,rho0_nuc)*(1. + 0*im)
+
+        for n in 1:n_nuc
+            r1 = distance_el_nuc_traf[n]
+            A_n = A_list[n]
+            ne_cont = n_e_contribution(dim_el,dim_nuc,gamma_n,r1,A_n,Hmag1,Mmat1,Smat,Imat,rho0,time_hahn_echo)
+
+            mult = n_pair_contr[n]
+            intensity_CCE1 = intensity_CCE1 .* ne_cont
+            intensity_correction = intensity_correction .* ne_cont.^mult
+
+        end
+    end
+
+    print("\n")
+    print("Computing CCE2 contributions ...\n")
+
+    dimH = dim_el * dim_nuc^2
+
+    # Magnetic interaction matrix
+    Mmat = []
+    for i = 1:3
+        mat = zeros(dimH,dimH)
+        # needs to be updated for non-isotropic g
+        mat += kron(Smat[i],kron(I1,I1)).*gamma_t[i,i]
+        mat += kron(S1,kron(Imat[i],I1)).*gamma_n
+        mat += kron(S1,kron(I1,Imat[i])).*gamma_n
+        push!(Mmat,mat)
+    end
+
+    # magnetic field contribution is universal
+    Hmag = zeros(dimH,dimH)
+    B0t = gamma_t * B0
+    for i = 1:3
+        Hmag += kron(Smat[i],kron(I1,I1)).*B0t[i]
+        Hmag += kron(S1,kron(Imat[i],I1)).*(B0[i]*gamma_n)
+        Hmag += kron(S1,kron(I1,Imat[i])).*(B0[i]*gamma_n)
+    end
+
+    # set initial density matrix for 3-particle system    
+    rho0 = kron(rho0_el,kron(rho0_nuc,rho0_nuc))*(1. + 0*im)
+
+    if Threads.nthreads() == 1 
+
+        for ipair = 1:n_pairs
+
+            n = pair_list[ipair][1]
+            m = pair_list[ipair][2]
+
+            r1 = distance_el_nuc_traf[n]
+            r2 = distance_el_nuc_traf[m]
+
+            A_n = A_list[n]
+            A_m = A_list[m]
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+
+            intensity_CCE2 = intensity_CCE2 .* nne_cont
+        end
+
+    else
+
+        print("entered threaded route")
+        
+        # block the pair list among the threads
+        blocks = Iterators.partition(1:n_pairs, n_pairs ÷ Threads.nthreads())
+        print(blocks,"\n")
+        tasks = map(blocks) do block
+
+            Threads.@spawn begin
+                int_block = ones(n_time_step)
+                for ipair in block
+                    n = pair_list[ipair,1]
+                    m = pair_list[ipair,2]
+
+                    r1 = distance_el_nuc_traf[n]
+                    r2 = distance_el_nuc_traf[m]
+                    A_n = A_list[n]
+                    A_m = A_list[m]
+                    nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+
+                    int_block = int_block .* nne_cont
+                end
+                int_block
+            end
+        end
+
+        # get all the results ...
+        int_blocks = fetch.(tasks)
+        # ... and accumulate them
+        for int in int_blocks
+            intensity_CCE2 = intensity_CCE2 .* int
+        end
+
+    end
+
+    intensity_CCE2 = intensity_CCE2 ./ intensity_correction
+
+    intensity = intensity_CCE1 .* intensity_CCE2
+
+    return intensity, intensity_CCE1, intensity_CCE2
+
 end
 
 end

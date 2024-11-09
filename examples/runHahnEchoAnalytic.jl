@@ -1,10 +1,12 @@
 push!(LOAD_PATH,"../src")
 
 using jlCCE
+using Tables, CSV
 using BenchmarkTools
 
 # set system - use the simple constructor
 spinsystem = SpinSystem("pddbm2.pdb","Pd",1)  # <--- note: put this file into the folder
+#spinsystem = SpinSystem("pddbm2.cif","Pd",1)  # <--- note: put this file into the folder
 
 # modify the values (SpinSystem creates a mutable object):
 spinsystem.g_factor = [1.9846,1.9846,1.9846]  # isotropic here
@@ -17,25 +19,33 @@ spinsystem.g_factor = [1.9846,1.9846,1.9846]  # isotropic here
 #voacac2.magnetic_axes = [1.0 0.0 0.0 ; 0.0 1.0 0.0 ; 0.0 0.0 1.0]
 #voacac2.nuc_spin_bath = "H"
 #voacac2.gn_spin_bath = 5.58569468
-spinsystem.B0 = [0.,0.,1.]
+spinsystem.B0 = [0.,0.,.1]*10000 # 10 kGaus = 1 Tesla
 spinsystem.r_min = 0.
-r_max = range(4.5,35.5,length=150) # AA
+#r_max = range(4.5,35.5,length=150) # AA
+r_max = range(4.5,5.5,length=150) # AA
+spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
-spinsystem.t_max = 1.5e-5 # s
-spinsystem.n_time_step = 20
+spinsystem.t_max = 1e-4 # s
+spinsystem.n_time_step = 201
 
 
 # run
 #intensity = zeros(20,size(r_max)[1])
-for i in 1:size(r_max)[1]
-    spinsystem.r_max = r_max[i]
+#for i in 1:size(r_max)[1]
+    spinsystem.r_max = 20.0 #r_max[i]
     print("r_max: ",r_max,"\n")
-    intensity = cce(spinsystem)
-    print("\n")
-    print("Simulated intensity: ",intensity,"\n")
-    print("\n")
-end
+    times,intensity = cce(spinsystem)
+    spinsystem.use_exp = false
+    times,intensityNE = cce(spinsystem)
+    spinsystem.simulation_type="exact"
+    times,intensityEX,iCCE1,iCCE2 = cce(spinsystem)
+    #print("\n")
+    #print("Simulated intensity: ",intensity,"\n")
+    #print("\n")
+#end
 
+
+CSV.write("echo.csv", Tables.table([times intensity intensityNE intensityEX iCCE1 iCCE2]))
 
 
 
