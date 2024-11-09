@@ -141,22 +141,23 @@ function cce(system::SpinSystem)
             get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
     
     else   # test
-        n_nuc = 5
+        #n_nuc = 5
         distance_coordinates_el_nucs = []
 
-        print("Entered test mode")
+        println("Entered test mode")
 
         # test - 1 OK
+        n_nuc = 2
         #push!(distance_coordinates_el_nucs,[20.,4.,4.])
         #push!(distance_coordinates_el_nucs,[23.,5.,4.])
-        #push!(distance_coordinates_el_nucs,[7.,26.,0.])
-        #push!(distance_coordinates_el_nucs,[7.,25.,2.])
+        push!(distance_coordinates_el_nucs,[20.,0.,0.])
+        push!(distance_coordinates_el_nucs,[23.,0.,0.])
         #push!(distance_coordinates_el_nucs,[4.,25.,2.])
 
         # test 2
-        n_nuc=2
-        push!(distance_coordinates_el_nucs,[2.938,-2.936,-1.057])
-        push!(distance_coordinates_el_nucs,[1.145,-3.225, 2.987])
+        #n_nuc=2
+        #push!(distance_coordinates_el_nucs,[2.938,-2.936,-1.057])
+        #push!(distance_coordinates_el_nucs,[1.145,-3.225, 2.987])
 
 #        [2.9380000000000002e-8, -2.9359999999999996e-8, -1.0570000000000005e-8]
 #        [1.1449999999999992e-8, -3.225e-8, 2.987000000000001e-8]
@@ -563,7 +564,7 @@ end
 
 
 function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
-    s_nuc,gamma_n,s_el,gamma_el,mag_axes,B0,time_hahn_echo)
+    s_nuc,gamma_n,s_el,gamma_el,mag_axes,B00,time_hahn_echo)
 
     if ! is_unit(mag_axes,1e-8)
         print("non unit magnetic axes not yet debugged!")
@@ -581,11 +582,11 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
     # transform the nuclear coordinates
     
     # field strength
-    Bstrength = norm(B0)
+    Bstrength = norm(B00)
 
-    Rmat = get_rot_for_unit_vector(B0/Bstrength)
+    Rmat = get_rot_for_unit_vector(B00/Bstrength)
 
-    print("Found this field: ",B0,"\n")
+    print("Found this field: ",B00,"\n")
 
     print("Transforming by:\n")
     display(Rmat)
@@ -593,11 +594,11 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
 
     n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
 
-    print("Total number of pairs in bath: ",n_nuc*(n_nuc+1)÷2,"\n")
+    print("Total number of pairs in bath: ",n_nuc*(n_nuc-1)÷2,"\n")
     print("Screened number of CCE2 pairs: ",n_pairs,"\n")
     print("Screening distance was: ",r_max_bath/aacm," Å\n")
 
-    B00 = [0.,0.,Bstrength]
+    B0 = [0.,0.,Bstrength]
 
     # transform coordinates
     distance_el_nuc_traf = []
