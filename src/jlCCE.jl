@@ -36,6 +36,7 @@ mutable struct SpinSystem
     # type of simulation
     simulation_type::String
     use_exp::Bool
+    do_cce1::Bool
     # spin quantum number
     s_el::Float64
     # g factor at the center (x,y,z)
@@ -66,7 +67,7 @@ end
 # convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     coord_file,spin_center,spin_center_index,
-    "highfield_analytic",true,
+    "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
     [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
@@ -146,26 +147,10 @@ function cce(system::SpinSystem)
 
         println("Entered test mode")
 
-        # test - 1 OK
+        # test - keep these (used for test suite)
         n_nuc = 2
-        #push!(distance_coordinates_el_nucs,[20.,4.,4.])
-        #push!(distance_coordinates_el_nucs,[23.,5.,4.])
         push!(distance_coordinates_el_nucs,[20.,0.,0.])
         push!(distance_coordinates_el_nucs,[23.,0.,0.])
-        #push!(distance_coordinates_el_nucs,[4.,25.,2.])
-
-        # test 2
-        #n_nuc=2
-        #push!(distance_coordinates_el_nucs,[2.938,-2.936,-1.057])
-        #push!(distance_coordinates_el_nucs,[1.145,-3.225, 2.987])
-
-#        [2.9380000000000002e-8, -2.9359999999999996e-8, -1.0570000000000005e-8]
-#        [1.1449999999999992e-8, -3.225e-8, 2.987000000000001e-8]
-#        [2.9380000000000002e-8, 2.844000000000001e-8, -1.0570000000000005e-8]
-#        [1.1449999999999992e-8, 2.555e-8, 2.987000000000001e-8]
-#        [3.826e-8, 4.160000000000001e-9, 1.5229999999999998e-8]
-#        [3.26e-8, -1.3289999999999997e-8, 4.000000000000004e-10]
-#        [1.4860000000000002e-8, -3.3499999999999973e-9, -3.8650000000000005e-8]
     end
 
     print("This is jlCCE, running on ",Threads.nthreads()," threads")
@@ -214,10 +199,13 @@ function cce(system::SpinSystem)
             error("Unsuitable settings found (see above)")
         end
 
-        intensity,iCCE1,iCCE2 = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
+        intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
+        # dummies for iCCE1 and iCCE2
+        iCCE1 = ones(size(time_hahn_echo))
+        iCCE2 = intensity
     elseif system.simulation_type == "exact"
         intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
-             system.s_nuc,gamma_n,system.s_el,gamma_electron,system.magnetic_axes,system.B0,time_hahn_echo)
+             system.s_nuc,gamma_n,system.s_el,gamma_electron,system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
     else
         print("Unkonwn simulation type: ",system.simulation_type,"\n")
         intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
@@ -287,10 +275,8 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electr
             end 
         end
     end        
-    
-    # return dummies for CCE1 and CCE2
-    int1 = ones(n_time_step) 
-    return intensity, int1, intensity
+     
+    return intensity
 end
 
 """
@@ -564,7 +550,7 @@ end
 
 
 function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
-    s_nuc,gamma_n,s_el,gamma_el,mag_axes,B00,time_hahn_echo)
+    s_nuc,gamma_n,s_el,gamma_el,mag_axes,B00,do_cce1,time_hahn_echo)
 
     if ! is_unit(mag_axes,1e-8)
         print("non unit magnetic axes not yet debugged!")
@@ -654,8 +640,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,r_max_bath,
     # initial nuclear state: all M equal likely (kT >> delta E)
     rho0_nuc = I1.*(1. / trunc(Int,2*s_nuc+1) )
     
-    do_singles = true
-    if do_singles
+    if do_cce1
         # CCE1 contrubutions
         print("\n")
         print("Computing CCE1 contributions...\n")
