@@ -90,6 +90,12 @@ Phys. Rev. B 2006, 74, 035322
 """
 function cce(system::SpinSystem)
 
+    println("")
+    println("This is jlCCE")
+    println("=============\n")
+
+    println("Running on ",Threads.nthreads()," threads\n")
+
     if system.coord_file != "test"
         # check cif file
         print("Coordinates will be read from: ",system.coord_file,"\n")
@@ -125,16 +131,19 @@ function cce(system::SpinSystem)
         lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
             get_coordinates(system.coord_file,atomic_number_metal,atomic_number_nuclei)
 
-        print("lattice vectors:\n")
-        print(lattice[1],"\n")
-        print(lattice[2],"\n")
-        print(lattice[3],"\n")
+        println("lattice vectors:")
+        println(" a = ",lattice[1],)
+        println(" b = ",lattice[2],)
+        println(" c = ",lattice[3],"\n")
 
         # call function set_supercell_list: determine the cell list
         cell_list = set_supercell_list(system.r_max,lattice)
 
-        print("cell list: \n")
-        print(cell_list,"\n")
+        n_cell = size(cell_list,1)
+        println("r_max = ",system.r_max)
+        println("Number of replicated unit cells for spin bath: ",n_cell,"\n")
+        #print("cell list: \n")
+        #print(cell_list,"\n")
 
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
@@ -153,11 +162,7 @@ function cce(system::SpinSystem)
         push!(distance_coordinates_el_nucs,[23.,0.,0.])
     end
 
-    print("This is jlCCE, running on ",Threads.nthreads()," threads")
-
-    print("\n")
-    print("Number of bath nuclei: ",n_nuc,"\n")   
-    print("\n")
+    println("Number of bath nuclei: ",n_nuc,"\n")   
 
     # rescale distance coordinates from AA to cm (cgs unit system)
     distance_coordinates_el_nucs = distance_coordinates_el_nucs .* aacm
@@ -170,8 +175,6 @@ function cce(system::SpinSystem)
     # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
     gamma_electron = system.g_factor .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
-    #print("gamma el: ",gamma_electron,"\n")
-    #print("gamma n: ",gamma_n,"\n")
 
     # set time for the simulation
     time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
