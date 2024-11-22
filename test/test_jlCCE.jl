@@ -1,6 +1,7 @@
 push!(LOAD_PATH,"../src")
 
 using jlCCE
+using jlCCEtools
 using SpinBase
 using readCIF
 using Test, LinearAlgebra
@@ -38,7 +39,7 @@ end
 @testset "Read CIF" begin
 
     lattice,coord_e_spin,coords_n_spins_unit_cell = 
-            get_coordinates("vodbm2.cif",23,1)
+            get_coordinates("vodbm2.cif",23,1,1)
     @test lattice[1] ≈ [16.462, 0., 0.] atol=1e-3
     @test lattice[2] ≈ [0.,20.269,0.] atol=1e-3
     @test lattice[3] ≈ [0.,0.,14.95] atol=1e-3
@@ -106,5 +107,22 @@ end
     times,intensityX = cce(spinsystem)
 
     @test intensityA ≈ intensityX atol=1e-6
+
+end
+
+@testset "jlCCEtools tests" begin
+
+    times  = [0.00000000E+00,3.06122449E-07,6.12244898E-07,9.18367347E-07,1.22448980E-06,
+              1.53061224E-06,1.83673469E-06,2.14285714E-06,2.44897959E-06,2.75510204E-06,
+              3.06122449E-06,3.36734694E-06,3.67346939E-06,3.97959184E-06,4.28571429E-06,
+	      4.59183673E-06,4.89795918E-06,5.20408163E-06,5.51020408E-06,5.81632653E-06]
+    signal = [1.00000000E+00,9.98974170E-01,9.90650813E-01,9.74138471E-01,9.50294218E-01,
+              9.16723414E-01,8.66878057E-01,7.99398290E-01,7.20677728E-01,6.33920983E-01,
+              5.41495348E-01,4.51089619E-01,3.69808807E-01,2.98071630E-01,2.35133270E-01,
+              1.81208695E-01,1.36952725E-01,1.01017267E-01,7.25367807E-02,5.10004848E-02 ]
+
+    T2 = get_decay_time(times,signal)
+
+    @test T2 ≈ 3.68170253E-6 atol=1e-11
 
 end

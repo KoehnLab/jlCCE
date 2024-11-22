@@ -7,12 +7,13 @@ using LinearAlgebra
 using Unitful
 
 """
-    get_coordinates(cif_file::String,atomic_number_metal::Int,atomic_number_nuclei::Int)
+    get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
 
 extract the relevant information from the CIF
 
 input: cif_file - name of the file
        atomic_number_metal - atomic number describing the metal center
+       idx_metal  -  counter to select among several metal centers in the unit cell
        atomic_number_nuclei - atomic number describing the nuclei of the spin bath
 
 returns: lattice - lattice vectors of the crystal
@@ -20,7 +21,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,atomic_number_nuclei::Int)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
@@ -37,9 +38,13 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,atomic_number
     #print("atomic_n:",atomic_n,"\n")
     
     # get the coordinates of the spin center on the metal atom
-    idx_metal_atom = findfirst(x -> x==atomic_number_metal,atomic_n)
-    #print("test-idx_metal_atom:",idx_metal_atom,"\n")
-    #print("atomic_number_matal:", atomic_number_metal,"\n")  
+    idx_list = findall(x -> x==atomic_number_metal,atomic_n)
+    if idx_metal > size(idx_list)[1]
+        println("requested index: ", idx_metal)
+        println("number of such centers in unit cell: ", size(idx_list))
+        error("requested index for selecting spin center is too large")
+    end
+    idx_metal_atom = idx_list[idx_metal]
     coord_electron_spin = coords_atoms_unit_cell[idx_metal_atom]
 
     # get the coordinates of all bath spins

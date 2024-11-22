@@ -7,8 +7,7 @@ export SpinSystem, cce
 using AtomsIO
 using Unitful
 using LinearAlgebra
-# using ExponentialUtilities  # needed? try Base.exp for a start
-using BenchmarkTools
+using Printf
 
 # import the readCIF.jl file to read cif files 
 #   --> export: distance_coordinates_el_nucs, n_nuc
@@ -129,12 +128,19 @@ function cce(system::SpinSystem)
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
         lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,atomic_number_nuclei)
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
 
+        println("\n")
         println("lattice vectors:")
-        println(" a = ",lattice[1],)
-        println(" b = ",lattice[2],)
-        println(" c = ",lattice[3],"\n")
+        @printf " a = [%20.6f %20.6f  %20.6f]\n" lattice[1][1] lattice[1][2] lattice[1][3]
+        @printf " b = [%20.6f %20.6f  %20.6f]\n" lattice[2][1] lattice[2][2] lattice[2][3]
+        @printf " c = [%20.6f %20.6f  %20.6f]\n\n" lattice[3][1] lattice[3][2] lattice[3][3]
+ 
+        println("Selected nucleus ",system.spin_center," no. ",system.spin_center_index," in unit cell")
+        println("coordinates:")
+        @printf " x  %20.6f Å\n" coord_electron_spin[1]
+        @printf " y  %20.6f Å\n" coord_electron_spin[2]
+        @printf " z  %20.6f Å\n\n" coord_electron_spin[3]
 
         # call function set_supercell_list: determine the cell list
         cell_list = set_supercell_list(system.r_max,lattice)
@@ -170,6 +176,11 @@ function cce(system::SpinSystem)
     #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     #print(distance_coordinates_el_nucs,"\n") 
 
+    println("Applied magnetic field:")
+    @printf " x  %20.1f Gauss\n" system.B0[1]
+    @printf " y  %20.1f Gauss\n" system.B0[2]
+    @printf " z  %20.1f Gauss\n\n" system.B0[3]
+
     #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
     # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
@@ -202,7 +213,7 @@ function cce(system::SpinSystem)
             error("Unsuitable settings found (see above)")
         end
 
-        intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
+        intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
         # dummies for iCCE1 and iCCE2
         iCCE1 = ones(size(time_hahn_echo))
         iCCE2 = intensity
@@ -219,7 +230,7 @@ function cce(system::SpinSystem)
 end
 
 """
-    cce_hf_analytic(distance_coordinates_el_nucs,gamma_n,gamma_electron,B0,time_hahn_echo)
+    cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,gamma_electron,B0,time_hahn_echo)
 
 should be called by cce (rather than directly); distance_coordinates_el_nucs are the distances 
 of the bath nuclei from the spin center, gamma_n and gamma_electron the respective gyromagnetic 
@@ -228,7 +239,7 @@ time_hahn_echo the time set for which the signal is to be computed
 
 the function returns the intensity for the given time set
 """
-function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
+function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
 
     n_time_step = size(time_hahn_echo)
 
@@ -247,9 +258,16 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electr
     minA = minimum(abs.(A_n))
     maxA = maximum(abs.(A_n))
     print("\n")
-    print("Hyperfine coupling constants (min, max): ",minA,"  ",maxA,"\n")
+    print("Hyperfine coupling constants (min, max) in Hz: ",minA,"  ",maxA,"\n")
     print("\n")
     
+    # not directly used below, but call this to report the screening
+    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+
+    print("Total number of pairs in bath: ",n_nuc*(n_nuc-1)÷2,"\n")
+    print("Screened number of pairs:      ",n_pairs,"\n")
+    print("Screening distance was: ",r_max_bath/aacm," Å\n\n")
+
     # initialize Intensity to 1. for all times
     intensity = ones(n_time_step)
     
@@ -259,6 +277,9 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,gamma_n,gamma_electr
     for n in 1:n_nuc-1
         for m in n+1:n_nuc
             r_nm = (distance_coordinates_el_nucs[m] - distance_coordinates_el_nucs[n]) 
+            if norm(r_nm) > r_max_bath
+                continue
+            end
             r_nm_x_B0 = cross(r_nm, B0)
             r_nm_dot_B0 = dot(r_nm, B0)
             theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
