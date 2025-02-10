@@ -183,8 +183,11 @@ function cce(system::SpinSystem)
 
     #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
+    # considering the anisotropy of the g factor --> determine an effective g factor
+    g_eff = transpose(system.B0) * system.magnetic_axes * system.g_factor
+
     # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
-    gamma_electron = system.g_factor .* (mu_b / hbar)
+    gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
 
     # set time for the simulation
