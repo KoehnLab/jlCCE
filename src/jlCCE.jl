@@ -94,7 +94,7 @@ function cce(system::SpinSystem)
     println("=============\n")
 
     println("Running on ",Threads.nthreads()," threads\n")
-
+ 
     if system.coord_file != "test"
         # check cif file
         print("Coordinates will be read from: ",system.coord_file,"\n")
@@ -186,7 +186,19 @@ function cce(system::SpinSystem)
     # considering the anisotropy of the g factor --> determine an effective g factor
     g_eff = transpose(system.B0) * system.magnetic_axes * system.g_factor
 
-    # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
+    println("magnetic axes:")
+    @printf " x  %20.6f Å\n" system.magnetic_axes[1]
+    @printf " y  %20.6f Å\n" system.magnetic_axes[2]
+    @printf " z  %20.6f Å\n\n" system.magnetic_axes[3]
+
+    println("g factor of ",system.coord_file,": ",system.g_factor)
+    @printf " x  %20.6f Å\n" system.g_factor[1]
+    @printf " y  %20.6f Å\n" system.g_factor[2]
+    @printf " z  %20.6f Å\n\n" system.g_factor[3]
+
+    println("Determined effective g factor: ",g_eff)
+
+    # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
     gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
 
