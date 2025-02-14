@@ -207,11 +207,11 @@ function cce(system::SpinSystem)
             print("   Found: B0 = ",system.B0,"\n")
             err = true
         end
-        if system.g_factor[1] != system.g_factor[2] || system.g_factor[1] != system.g_factor[3]
-            print("Error: Analytic approach only for isotropic spin\n")
-            print("    Found: g_factor = ",system.g_factor,"\n")
-            err = true
-        end
+        #if system.g_factor[1] != system.g_factor[2] || system.g_factor[1] != system.g_factor[3]
+        #    print("Error: Analytic approach only for isotropic spin\n")
+        #    print("    Found: g_factor = ",system.g_factor,"\n")
+        #    err = true
+        #end
         if err
             error("Unsuitable settings found (see above)")
         end
