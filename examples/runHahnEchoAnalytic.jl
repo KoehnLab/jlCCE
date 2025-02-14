@@ -5,7 +5,7 @@ using Tables, CSV
 using BenchmarkTools
 
 # set system - use the simple constructor
-spinsystem = SpinSystem("cudbm2.pdb","Pd",1)  # <--- note: put this file into the folder
+spinsystem = SpinSystem("vodpm2.cif","V",1)  # <--- note: put this file into the folder
 #spinsystem = SpinSystem("pddbm2.cif","Pd",1)  # <--- note: put this file into the folder
 
 # modify the values (SpinSystem creates a mutable object):
@@ -30,7 +30,6 @@ spinsystem.t_min = 0.
 spinsystem.t_max = 15e-6 # s
 spinsystem.n_time_step = 20
 
-
 # run
 #intensity = zeros(20,size(r_max)[1])
 #for i in 1:size(r_max)[1]
@@ -39,7 +38,7 @@ spinsystem.n_time_step = 20
     times,intensity = cce(spinsystem)
     spinsystem.use_exp = false
     times,intensityNE = cce(spinsystem)
-    spinsystem.simulation_type="exact"
+    spinsystem.simulation_type="highfield_analytic"
     times,intensityEX,iCCE1,iCCE2 = cce(spinsystem)
     #print("\n")
     #print("Simulated intensity: ",intensity,"\n")
