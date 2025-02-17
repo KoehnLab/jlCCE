@@ -18,6 +18,7 @@ spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
 spinsystem.t_max = 15e-6 # s
 spinsystem.n_time_step = 50
+#spinsystem.det_magnetic_axes = false
 
 # run
     spinsystem.r_max = 35.0 
