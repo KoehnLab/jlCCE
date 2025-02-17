@@ -61,6 +61,7 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
+    det_magnetic_axes::Boo1
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -69,7 +70,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
 
 """
     cce(system::SpinSystem)
