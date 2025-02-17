@@ -61,7 +61,7 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
-    det_magnetic_axes::Boo1
+    det_magnetic_axes::Bool
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
