@@ -136,7 +136,8 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
     # initialize outputs lists for spin bath
     #coordinates_nuclear_spins = Vector{}[]
     distance_coordinates_el_nucs = Vector{}[]
-    distance_coordinates_el_spin_oxygen = Vector{}[]
+    #distance_coordinates_el_spin_oxygen = Vector{}[]
+    distance_el_spin_oxygen = Vector{}[]
     #distance_coordinates_nuc_nuc = Vector{}[]
     n_nuc = 0
 
@@ -166,14 +167,15 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
             distance_coords_el_spin_oxygen = coords_oxygen - coord_spin_center
             distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
             # restricted oxygens (nearest oxygen around the electron spin) 
-            if distance_el_spin_oxygen <= 2.0
-               push!(distance_coordinates_el_spin_oxygen,distance_coordinates_el_spin_oxygen) 
-            end 
+            #if distance_el_spin_oxygen <= 2.0
+            #   push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
+            #end 
 
         end
         
     end
-    return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
+    #return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
+    return distance_coordinates_el_nucs,n_nuc,distance_el_spin_oxygen
 
 end
    
