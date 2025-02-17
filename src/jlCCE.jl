@@ -124,12 +124,14 @@ function cce(system::SpinSystem)
         print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
         print("\n")
 
+        atomic_number_oxygen = 8
+
         # get list of spin bath nuclei using the module readCIF
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
         lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,det_magnetic_axes,atomic_number_oxygen)
 
         println("\n")
         println("lattice vectors:")
