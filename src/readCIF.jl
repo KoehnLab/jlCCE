@@ -21,7 +21,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_magnetic_axes::Boo1,atomic_number_oxygen::Int)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_magnetic_axes::Bool,atomic_number_oxygen::Int)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
