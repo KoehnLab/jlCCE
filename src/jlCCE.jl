@@ -156,8 +156,8 @@ function cce(system::SpinSystem)
 
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
-        distance_coordinates_el_nucs,n_nuc = 
-            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
+        distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen = 
+            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell)
     
     else   # test
         #n_nuc = 5
