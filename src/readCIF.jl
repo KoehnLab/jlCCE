@@ -21,7 +21,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_magnetic_axes::Bool)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
@@ -52,13 +52,9 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
 
     # get the coordinates of oxygen within the unit cell --> to determine the magnetic axes 
-    #if det_magnetic_axes 
-        atomic_number_oxygen = 8
+    atomic_number_oxygen = 8
     idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
     coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
-    #else 
-    #    println("Magnetic axes are not redetermined")
-    #end
 
     return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
 end
@@ -137,8 +133,8 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
     # initialize outputs lists for spin bath
     #coordinates_nuclear_spins = Vector{}[]
     distance_coordinates_el_nucs = Vector{}[]
-    #distance_coordinates_el_spin_oxygen = Vector{}[]
-    distance_el_spin_oxygen = Vector{}[]
+    distance_coordinates_el_spin_oxygen = Vector{}[]
+    #distance_el_spin_oxygen = Vector{}[]
     #distance_coordinates_nuc_nuc = Vector{}[]
     n_nuc = 0
 
@@ -172,15 +168,14 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
             distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
 
             # restricted oxygens (nearest oxygen around the electron spin) 
-            #if distance_el_spin_oxygen <= 2.0
-            #   push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
-            #end 
+            if distance_el_spin_oxygen <= 2.0
+               push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
+            end 
 
         end
         
     end
-    #return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
-    return distance_coordinates_el_nucs,n_nuc,distance_el_spin_oxygen
+    return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
 
 end
    
