@@ -21,7 +21,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,atomic_number_oxygen::Int)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_magnetic_axes::Bool)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
@@ -52,12 +52,13 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
 
     # get the coordinates of oxygen within the unit cell --> to determine the magnetic axes 
-    #if det_magnetic_axes == true
+    if det_magnetic_axes 
+        atomic_number_oxygen = 8
     idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
     coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
-    #else det_magnetic_axes == false
-    #    println("Magnetic axes are not redetermined")
-    #end
+    else 
+        println("Magnetic axes are not redetermined")
+    end
 
     return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
 end
