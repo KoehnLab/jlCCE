@@ -52,13 +52,13 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
 
     # get the coordinates of oxygen within the unit cell --> to determine the magnetic axes 
-    if det_magnetic_axes 
+    #if det_magnetic_axes 
         atomic_number_oxygen = 8
     idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
     coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
-    else 
-        println("Magnetic axes are not redetermined")
-    end
+    #else 
+    #    println("Magnetic axes are not redetermined")
+    #end
 
     return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
 end
@@ -162,11 +162,15 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
                 push!(distance_coordinates_el_nucs, distance_coords_el_nucs)
                 n_nuc = n_nuc+1 
             end
-            
+        end
+	
+	# calculate the (shfted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
+	for Aidx in eachindex(coords_oxygen_unit_cell)
             # coordinates of oxygen atoms in the crystal structure
             coords_oxygen = coords_oxygen_unit_cell[Aidx] + shift  
             distance_coords_el_spin_oxygen = coords_oxygen - coord_spin_center
             distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
+
             # restricted oxygens (nearest oxygen around the electron spin) 
             #if distance_el_spin_oxygen <= 2.0
             #   push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
