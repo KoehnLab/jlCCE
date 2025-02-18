@@ -61,7 +61,6 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
-    det_magnetic_axes::Bool
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -70,7 +69,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
 
 """
     cce(system::SpinSystem)
@@ -124,14 +123,12 @@ function cce(system::SpinSystem)
         print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
         print("\n")
 
-        atomic_number_oxygen = 8
-
         # get list of spin bath nuclei using the module readCIF
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
         lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_magnetic_axes)
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
 
         println("\n")
         println("lattice vectors:")
