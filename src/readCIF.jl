@@ -26,7 +26,7 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
-    print("System: ",system,"\n")
+    #print("System: ",system,"\n")
 
     # coordinates in unit cell and translation vectors (lattice)
     coords_atoms_unit_cell = ustrip.(position(system))
@@ -57,11 +57,10 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
         atomic_number_oxygen = 8
         idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
         coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
-        return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
     else 
-        return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell
+        coords_oxygen_unit_cell = nothing
     end
-
+    return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
 end
 
 """
@@ -130,7 +129,7 @@ and another list with their (absolute) coordinates to later compute their
 relative positions
 
 """
-function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center,det_mag_axes::Bool)
+function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center,coords_oxygen_unit_cell,det_mag_axes::Bool)
 
     # call set_supercell_list here (as we only need it here)
     cell_list = set_supercell_list(r_max,lattice)
@@ -167,7 +166,7 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
 	end 
 
 
-    if det_mag_axes
+    if det_mag_axes 
         for Tidx in eachindex(cell_list)
             # construct the shift vector for this cell
             shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
@@ -184,7 +183,7 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
                 end 
             end
         end
-        return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
+        return distance_coordinates_el_spin_oxygen
     else 
         return distance_coordinates_el_nucs,n_nuc
     end
