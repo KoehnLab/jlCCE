@@ -5,6 +5,7 @@ export get_coordinates, set_supercell_list, get_bath_list
 using AtomsIO
 using LinearAlgebra
 using Unitful
+#using AtomsBase
 
 """
     get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
@@ -21,7 +22,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_mag_axes::Bool)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
@@ -52,11 +53,15 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
 
     # get the coordinates of oxygen within the unit cell --> to determine the magnetic axes 
-    atomic_number_oxygen = 8
-    idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
-    coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
+    if det_mag_axes
+        atomic_number_oxygen = 8
+        idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
+        coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
+        return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
+    else 
+        return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell
+    end
 
-    return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
 end
 
 """
@@ -125,7 +130,7 @@ and another list with their (absolute) coordinates to later compute their
 relative positions
 
 """
-function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center,coords_oxygen_unit_cell)
+function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center,det_mag_axes::Bool)
 
     # call set_supercell_list here (as we only need it here)
     cell_list = set_supercell_list(r_max,lattice)
@@ -159,23 +164,31 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
                 n_nuc = n_nuc+1 
             end
         end
-	
-	# calculate the (shfted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
-	for Aidx in eachindex(coords_oxygen_unit_cell)
-            # coordinates of oxygen atoms in the crystal structure
-            coords_oxygen = coords_oxygen_unit_cell[Aidx] + shift  
-            distance_coords_el_spin_oxygen = coords_oxygen - coord_spin_center
-            distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
+	end 
 
-            # restricted oxygens (nearest oxygen around the electron spin) 
-            if distance_el_spin_oxygen <= 2.0
-               push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
-            end 
 
+    if det_mag_axes
+        for Tidx in eachindex(cell_list)
+            # construct the shift vector for this cell
+            shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
+	        # calculate the (shfted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
+	        for Aidx in eachindex(coords_oxygen_unit_cell)
+                # coordinates of oxygen atoms in the crystal structure
+                coords_oxygen = coords_oxygen_unit_cell[Aidx] + shift  
+                distance_coords_el_spin_oxygen = coords_oxygen - coord_spin_center
+                distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
+
+                # restricted oxygens (nearest oxygen around the electron spin) 
+                if distance_el_spin_oxygen <= 2.0
+                push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
+                end 
+            end
         end
-        
+        return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
+    else 
+        return distance_coordinates_el_nucs,n_nuc
     end
-    return distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen
+        
 
 end
    
