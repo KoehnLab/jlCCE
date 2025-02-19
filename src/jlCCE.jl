@@ -128,7 +128,7 @@ function cce(system::SpinSystem)
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell= 
+        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell= 
             get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
 
         println("\n")
@@ -155,7 +155,7 @@ function cce(system::SpinSystem)
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
         distance_coordinates_el_nucs,n_nuc= 
-            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,system.det_mag_axes)
+            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell,system.det_mag_axes)
             #print("oxygen coords: \n")
 	    #print(distance_coordinates_el_spin_oxygen)
 	    
