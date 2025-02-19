@@ -20,10 +20,12 @@ mutable struct SpinSystem
     r_min::Float64
     # maximum interaction radius
     r_max::Float64
+    # determine magnetic axes using the geometry of the molecule --> det_mag_axes = true
+    det_mag_axes::Bool
 end
 
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
-    coord_file,spin_center,spin_center_index,"H",0,10)
+    coord_file,spin_center,spin_center_index,"H",0,10,true)
 
 function det_mag_axes(system::SpinSystem)
     println("Determination of the magnetic axes starts")
@@ -46,53 +48,89 @@ function det_mag_axes(system::SpinSystem)
     print("\n")
     print("Current metal of the spin center: ",system.spin_center,"\n")
 
-     # identify nuclear spin bath 
-     if system.nuc_spin_bath == "H"
+    # identify nuclear spin bath 
+    if system.nuc_spin_bath == "H"
         atomic_number_nuclei = 1
-     else 
+    else 
         print("Error only proton bath \n")
         exit()
-     end
+    end
      
-     lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
-        get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
+    lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
+        get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
 
-     println("\n")
-     println("lattice vectors:")
-     @printf " a = [%20.6f %20.6f  %20.6f]\n" lattice[1][1] lattice[1][2] lattice[1][3]
-     @printf " b = [%20.6f %20.6f  %20.6f]\n" lattice[2][1] lattice[2][2] lattice[2][3]
-     @printf " c = [%20.6f %20.6f  %20.6f]\n\n" lattice[3][1] lattice[3][2] lattice[3][3]
+    println("\n")
+    println("lattice vectors:")
+    @printf " a = [%20.6f %20.6f  %20.6f]\n" lattice[1][1] lattice[1][2] lattice[1][3]
+    @printf " b = [%20.6f %20.6f  %20.6f]\n" lattice[2][1] lattice[2][2] lattice[2][3]
+    @printf " c = [%20.6f %20.6f  %20.6f]\n\n" lattice[3][1] lattice[3][2] lattice[3][3]
 
-     println("Selected nucleus ",system.spin_center," no. ",system.spin_center_index," in unit cell")
-     println("coordinates:")
-     @printf " x  %20.6f Å\n" coord_electron_spin[1]
-     @printf " y  %20.6f Å\n" coord_electron_spin[2]
-     @printf " z  %20.6f Å\n\n" coord_electron_spin[3]
+    println("Selected nucleus ",system.spin_center," no. ",system.spin_center_index," in unit cell")
+    println("coordinates:")
+    @printf " x  %20.6f Å\n" coord_electron_spin[1]
+    @printf " y  %20.6f Å\n" coord_electron_spin[2]
+    @printf " z  %20.6f Å\n\n" coord_electron_spin[3]
 
-     # call function set_supercell_list: determine the cell list
-     cell_list = set_supercell_list(system.r_max,lattice)
+    # call function set_supercell_list: determine the cell list
+    cell_list = set_supercell_list(system.r_max,lattice)
    
-     n_cell = size(cell_list,1)
-     println("r_max = ",system.r_max)
-     println("Number of replicated unit cells for spin bath: ",n_cell,"\n")
+    n_cell = size(cell_list,1)
+    println("r_max = ",system.r_max)
+    println("Number of replicated unit cells for spin bath: ",n_cell,"\n")
    
-     distance_coordinates_el_nucs,n_nuc,distance_coordinates_el_spin_oxygen = 
-        get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell)
+    distance_coordinates_el_spin_oxygen = 
+        get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell,system.det_mag_axes)
  
-     n_oxygen = size(distance_coordinates_el_spin_oxygen,1)
+    n_oxygen = size(distance_coordinates_el_spin_oxygen,1)
 
-     println("Number of restricted oxygen: \n ")
-     print(n_oxygen)
+    println("Number of restricted oxygen: ",n_oxygen)
+    
+    print("\n")
+    println("Coordinates of oxygen:")
 
-     print("\n")
-     println("Restricted oxygen coordinates:")
-     print(distance_coordinates_el_spin_oxygen) 
-     print("\n")
+    for i in 1:n_oxygen
+        println("O", i,": ", distance_coordinates_el_spin_oxygen[i]," Å")
+    end
 
-     
-     
+    print("\n")
+    println("Magnetic axes will be determined based on these coordinates. \n")
+    
 
-     return n_oxygen,distance_coordinates_el_spin_oxygen 
+    # determine the magnetic axes from the distance coordinates of oxygen
+    m_12 = (distance_coordinates_el_spin_oxygen[1] + distance_coordinates_el_spin_oxygen[2])/2
+    x = m_12/norm(m_12)
+
+    m_23 = (distance_coordinates_el_spin_oxygen[2] + distance_coordinates_el_spin_oxygen[3])/2
+    y = m_23/norm(m_23)
+
+    # proof of orthogonality - Gram-Schmidt process
+    if dot(x,y) > 1e-5
+        z = cross(x,y)/norm(cross(x,y))
+    else 
+        # keep x
+        u1 = x 
+        # orthogonalize y to x
+        u2 = y - dot(y,u1)*u1 
+        y = u2
+        z = cross(x,y)/norm(cross(x,y))
+    end
+
+    R_m =  transpose([x y z]) 
+
+    if det(R_m) > 0.99
+        println("Magnetic axes: ")
+        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[2,1] R_m[1,3]
+        @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
+        @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
+    else
+        R_m = [y x z]
+        println("Magnetic axes: ",)
+        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[2,1] R_m[1,3]
+        @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
+        @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
+    end
+
+    return R_m
 end
 
 
