@@ -5,7 +5,7 @@ using Tables, CSV
 using BenchmarkTools
 
 # set system - use the simple constructor
-spinsystem = SpinSystem("vodpm2.cif","V",1)  # <--- note: put this file into the folder
+spinsystem = SpinSystem("cudbm2.pdb","Pd",1)  # <--- note: put this file into the folder
 #spinsystem = SpinSystem("pddbm2.cif","Pd",1)  # <--- note: put this file into the folder
 
 # modify the values (SpinSystem creates a mutable object):
