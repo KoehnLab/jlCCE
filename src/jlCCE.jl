@@ -61,6 +61,7 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
+    det_mag_axes::Bool
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -69,7 +70,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
 
 """
     cce(system::SpinSystem)
@@ -127,8 +128,8 @@ function cce(system::SpinSystem)
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
+        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell= 
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
 
         println("\n")
         println("lattice vectors:")
@@ -153,8 +154,8 @@ function cce(system::SpinSystem)
 
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
-        distance_coordinates_el_nucs,n_nuc,distance_el_spin_oxygen = 
-            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell)
+        distance_coordinates_el_nucs,n_nuc= 
+            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,system.det_mag_axes)
             #print("oxygen coords: \n")
 	    #print(distance_coordinates_el_spin_oxygen)
 	    
