@@ -5,11 +5,9 @@ using LinearAlgebra
 
 # set system - use the simple constructor
 spinsystem = SpinSystem("../cudbm2.pdb","Pd",1) 
-spinsystem-r_min = 0
-spinsystem.r_max = 10
 
 # run
-n_oxygen,distance_coordinates_el_spin_oxygen = det_mag_axes(spinsystem)
+R_m = det_mag_axes(spinsystem)
 
 
 
