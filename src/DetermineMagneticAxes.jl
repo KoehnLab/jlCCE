@@ -1,13 +1,13 @@
 module DetermineMagneticAxes 
 
-export SpinSystem,det_mag_axes
+export System,det_mag_axes
 
 using LinearAlgebra
 using Printf
 
 using readCIF
 
-mutable struct SpinSystem
+mutable struct System
     # file with coordinates (anything that the file read can handle)
     coord_file::String
     # name of the atom defining the spin center ("Cu", "V", ...)
@@ -24,11 +24,11 @@ mutable struct SpinSystem
     det_mag_axes::Bool
 end
 
-SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
+System(coord_file,spin_center,spin_center_index) = System(
     coord_file,spin_center,spin_center_index,"H",0,10,true)
 
-function det_mag_axes(system::SpinSystem)
-    println("Determination of the magnetic axes starts")
+function det_mag_axes(system::System)
+    println("Determination of the magnetic axes")
     println("========================================\n")
     
     # check cif file
@@ -102,10 +102,15 @@ function det_mag_axes(system::SpinSystem)
 
     m_23 = (distance_coordinates_el_spin_oxygen[2] + distance_coordinates_el_spin_oxygen[3])/2
     y = m_23/norm(m_23)
+    
+    #println("x 1:", x)
+    #println("y 1: ",y)
 
     # proof of orthogonality - Gram-Schmidt process
-    if dot(x,y) > 1e-5
+    if dot(x,y) < 1e-5
         z = cross(x,y)/norm(cross(x,y))
+
+	#println("z 1: ",z)
     else 
         # keep x
         u1 = x 
@@ -113,21 +118,36 @@ function det_mag_axes(system::SpinSystem)
         u2 = y - dot(y,u1)*u1 
         y = u2
         z = cross(x,y)/norm(cross(x,y))
+        #println("x2: ", u1)
+        #println("y2: ", u2)
+        #println("z2: ", z)
     end
 
     R_m =  transpose([x y z]) 
+    #println("check R_m: ", R_m)
 
     if det(R_m) > 0.99
         println("Magnetic axes: ")
-        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[2,1] R_m[1,3]
+        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[1,2] R_m[1,3]
         @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
         @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
     else
-        R_m = [y x z]
-        println("Magnetic axes: ",)
-        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[2,1] R_m[1,3]
-        @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
-        @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
+	nothing
+        #R_m = [y x z]
+        #if det(R_m) > 0.99
+	   println("Magnetic axes: ",)
+           @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[1,2] R_m[1,3]
+           @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
+           @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
+	#else 
+	 #  R_m = [x z y]
+	  #if det(R_m) > 0.99
+          #else
+          #    if 
+          #    else
+          #    end
+          #end
+        #end
     end
 
     return R_m
