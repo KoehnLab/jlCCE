@@ -2,12 +2,13 @@ push!(LOAD_PATH,"../../src")
 
 using DetermineMagneticAxes
 using LinearAlgebra
+using Printf
 
 # set system - use the simple constructor
-spinsystem = SpinSystem("../cudbm2.pdb","Pd",1) 
+system = System("../cudbm2.pdb","Pd",1) 
 
 # run
-R_m = det_mag_axes(spinsystem)
+R_m = det_mag_axes(system)
 
 
 
@@ -22,10 +23,10 @@ R_m = det_mag_axes(spinsystem)
 
 # coordinates of Cu and O
 #Cu = ([2.979859,    1.445000,    5.902247]);
-#O1 = ([3.726962,    2.999820,    6.841884]);
-#O2 = ([3.992780,    1.791800,    4.268505]);
-#O3 = ([2.232756,   -0.109820,    4.962609]);
-#O4 = ([1.966938,    1.098200,    7.535989]);
+#O1 = ([3.726962,    2.999820,    6.841884];
+#O2 = ([3.992780,    1.791800,    4.268505];
+#O3 = ([2.232756,   -0.109820,    4.962609];
+#O4 = ([1.966938,    1.098200,    7.535989];
 
 # determine x,y,z contribution of the magnetic axes
 
@@ -38,15 +39,15 @@ R_m = det_mag_axes(spinsystem)
 #      y
 
 # middle point between O1 & O4, O3 & O4
-#M_o1o4 = (O1 + O4)/2
-#M_o3o4 = (O3 + O4)/2
+#M_o1o2 = (O1 + O2)/2
+#M_o2o3 = (O2 + O3)/2
 
 # determnine x and y direction of the magnetic axes
-#x = (M_o1o4 - Cu)/norm(M_o1o4 - Cu)
-#y = (M_o3o4 - Cu)/norm(M_o3o4 - Cu)
+#x = (M_o1o2 - Cu)/norm(M_o1o2 - Cu)
+#y = (M_o2o3 - Cu)/norm(M_o2o3 - Cu)
 
 # determine z direction of the magnetic axes
-#z =  (cross(x,y))#/norm(cross(x,y))
+#z =  (cross(x,y))/norm(cross(x,y))
 #norm_z = norm(z)
 #println("Norm of z: ",norm_z)
 
