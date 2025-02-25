@@ -1,45 +1,83 @@
 push!(LOAD_PATH,"../../src")
 
 using jlCCE
-using Tables, CSV
+using jlCCEtools
+using DetermineMagneticAxes
+using Tables, CSV, DataFrames
 using BenchmarkTools
+using rotation_B0
 
 # set system - use the simple constructor
-spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  # <--- note: put this file into the folder
+system = System("../cudbm2.pdb","Pd",1)
+spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  
+
+# determine magnetic axes from geometry
+system.det_mag_axes = true
+R_m = det_mag_axes(system)
+spinsystem.magnetic_axes = R_m
+
+# determine the rotated magnetic field
+B0 = [0., 0., 1.]
+theta = collect(range(0.0,90.0,2))
+phi = collect(range(0.0,90.0,2))
+#B0_rot = rotation(B0,theta,phi,R_m) 
+
 
 # modify the values (SpinSystem creates a mutable object):
 spinsystem.s_el = 0.5
 spinsystem.g_factor = [2.051,2.051,2.258] 
-spinsystem.magnetic_axes = [-0.0930991  -0.656122   0.748421; 0.423093   -0.708907  -0.567275; 0.901291    0.258756   0.343604]
-spinsystem.B0 = [0.7484, -0.5673, 0.3436]
+#spinsystem.B0 = [-0.748365, 0.567226, -0.343808]
+spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
 r_max = 35
 spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
 spinsystem.t_max = 15e-6 # s
-spinsystem.n_time_step = 50
-#spinsystem.det_magnetic_axes = false
+spinsystem.n_time_step = 30
+spinsystem.use_exp = false
+spinsystem.det_mag_axes = false
+spinsystem.simulation_type="highfield_analytic"
 
 # run
-    spinsystem.r_max = 35.0 
-    print("r_max: ",r_max,"\n")   
-    times,intensity = cce(spinsystem)
-    spinsystem.use_exp = false
-    #times,intensityNE = cce(spinsystem)
-    spinsystem.simulation_type="highfield_analytic"
-    #times,intensityEX,iCCE1,iCCE2 = cce(spinsystem)
-    #print("\n")
-    print("Simulated intensity: ",intensity,"\n")
-    #print("\n")
+tab_angle_theta = Vector{Float64}()
+tab_angle_phi = Vector{Float64}()
+tab_Tm = Vector{Float64}()
+
+df = DataFrame(Theta=Float64[], Phi=Float64[], Tm=Float64[])
+
+for i in 1:size(theta)[1] 
+    for j in 1:size(phi)[1]
+	# determine theta for the loop
+        angle_theta = deg2rad(theta[i])
+        push!(tab_angle_theta, rad2deg(angle_theta))
+	# determine phi for the loop 
+        angle_phi = deg2rad(phi[j])
+        push!(tab_angle_phi, rad2deg(angle_phi))
+	
+	# determine rotated B0  
+        B0_rot = rotation(B0,angle_theta,angle_phi,R_m)
+        spinsystem.B0 = B0_rot
+	
+	# simulate intensity
+        print("r_max: ",r_max,"\n")   
+	time,intensity = cce(spinsystem)
+        
+	# determine Tm
+	Tm = get_decay_time(time,intensity)*10^6
+	push!(tab_Tm, Tm)
+
+	push!(df, (angle_theta, angle_phi, Tm))
+
+	println("Simulated intensity: ",intensity,"\n") 
+	println("Determined coherent time: ", Tm, "\n") 
+
+	#CSV.write("Hahn_echo_intensity_diffB0.csv", Tables.table([angle_theta angle_phi times intensity]))
+    end
+end 
 
 
-#CSV.write("echo.csv", Tables.table([times intensity intensityNE intensityEX iCCE1 iCCE2]))
+#CSV.write("echo.csv", Tables.table([tab_angle_theta tab_angle_phi tab_Tm]))
+CSV.write("echo.csv", df)
 
 
-
-#print("\n")
-#print("Our great result:\n")
-#print("time of the Hahn echo: ",time_hahn_echo,"\n")
-#print("Simulated intensity: ",intensity,"\n")
-#print("\n")
 
