@@ -88,7 +88,7 @@ Spectral diffusion of localized electron spins in the nuclear solid-state enviro
 Phys. Rev. B 2006, 74, 035322
 
 """
-function cce(system::SpinSystem)
+function cce(system::SpinSystem,theta::Float64,phi::Float64)
 
     println("")
     println("This is jlCCE")
@@ -180,21 +180,23 @@ function cce(system::SpinSystem)
     #print(distance_coordinates_el_nucs,"\n") 
 
     println("Applied magnetic field:")
-    @printf " x  %20.1f Gauss\n" system.B0[1]
-    @printf " y  %20.1f Gauss\n" system.B0[2]
-    @printf " z  %20.1f Gauss\n\n" system.B0[3]
+    @printf " x  %20.6f Gauss\n" system.B0[1]
+    @printf " y  %20.6f Gauss\n" system.B0[2]
+    @printf " z  %20.6f Gauss\n\n" system.B0[3]
 
     #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
     # considering the anisotropy of the g factor --> determine an effective g factor
-    g_eff = transpose(system.B0) * system.magnetic_axes * system.g_factor
+    #g_eff = transpose(system.B0) * system.magnetic_axes * system.g_factor
+    g_eff = sqrt(system.g_factor[1]^2*cos(phi)^2*sin(theta)^2 + system.g_factor[2]^2*sin(phi)^2*sin(theta)^2 + system.g_factor[3]^2*cos(theta)^2)
+
 
     println("magnetic axes:")
-    @printf " x  %20.6f Å\n" system.magnetic_axes[1]
-    @printf " y  %20.6f Å\n" system.magnetic_axes[2]
-    @printf " z  %20.6f Å\n\n" system.magnetic_axes[3]
+    @printf " x  [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[1,2] system.magnetic_axes[1,3]
+    @printf " y  [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[2,1] system.magnetic_axes[2,2] system.magnetic_axes[2,3]
+    @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" system.magnetic_axes[3,1] system.magnetic_axes[3,2] system.magnetic_axes[3,3]
 
-    println("g factor of ",system.coord_file,": ",system.g_factor)
+    println("g factor of ",system.coord_file,": ")
     @printf " x  %20.6f Å\n" system.g_factor[1]
     @printf " y  %20.6f Å\n" system.g_factor[2]
     @printf " z  %20.6f Å\n\n" system.g_factor[3]
