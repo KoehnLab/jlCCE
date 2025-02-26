@@ -18,8 +18,8 @@ spinsystem.magnetic_axes = R_m
 
 # determine the rotated magnetic field
 B0 = [0., 0., 1.]
-theta = collect(range(0.0,90.0,2))
-phi = collect(range(0.0,90.0,2))
+theta = 0:5:90 #collect(range(0.0,90.0,1))
+phi = 0:5:90 #collect(range(0.0,90.0,1))
 #B0_rot = rotation(B0,theta,phi,R_m) 
 
 
@@ -33,7 +33,7 @@ r_max = 35
 spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
 spinsystem.t_max = 15e-6 # s
-spinsystem.n_time_step = 30
+spinsystem.n_time_step = 50
 spinsystem.use_exp = false
 spinsystem.det_mag_axes = false
 spinsystem.simulation_type="highfield_analytic"
@@ -60,10 +60,10 @@ for i in 1:size(theta)[1]
 	
 	# simulate intensity
         print("r_max: ",r_max,"\n")   
-	time,intensity = cce(spinsystem)
+	time,intensity = cce(spinsystem,angle_theta,angle_phi)
         
 	# determine Tm
-	Tm = get_decay_time(time,intensity)*10^6
+	Tm = 2*get_decay_time(time,intensity)*10^6
 	push!(tab_Tm, Tm)
 
 	push!(df, (angle_theta, angle_phi, Tm))
