@@ -159,7 +159,7 @@ function cce(system::SpinSystem,theta::Float64,phi::Float64)
             #print("oxygen coords: \n")
 	    #print(distance_coordinates_el_spin_oxygen)
 	    
-    else   # test
+    else   # system.coords_file = test
         #n_nuc = 5
         distance_coordinates_el_nucs = []
 
@@ -167,8 +167,20 @@ function cce(system::SpinSystem,theta::Float64,phi::Float64)
 
         # test - keep these (used for test suite)
         n_nuc = 2
-        push!(distance_coordinates_el_nucs,[20.,0.,0.])
-        push!(distance_coordinates_el_nucs,[23.,0.,0.])
+	# rotate the system
+	println("\n Investigation of rotated test system")
+
+	rot_mat_y = [cos(theta) 0 sin(theta); 0 1 0; +sin(theta) 0 cos(theta)]
+	rot_mat_z = [cos(phi) +sin(phi) 0; sin(phi) cos(phi) 0; 0 0 1]
+	
+	I1 = [-10.,0.,10.]
+	I2 = [10.,0.,20.]
+
+	I1_rot = rot_mat_z * (rot_mat_y*I1)
+	I2_rot = rot_mat_z * (rot_mat_y*I2)
+
+        push!(distance_coordinates_el_nucs,I1_rot)
+        push!(distance_coordinates_el_nucs,I2_rot)
     end
 
     println("Number of bath nuclei: ",n_nuc,"\n")   
