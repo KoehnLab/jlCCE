@@ -9,23 +9,24 @@ using rotation_B0
 
 # set system - use the simple constructor
 system = System("../cudbm2.pdb","Pd",1)
-spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  
+spinsystem = SpinSystem("test","Pd",1)  
 
 # determine magnetic axes from geometry
 system.det_mag_axes = true
 R_m = det_mag_axes(system)
+#R_m = [1. 0. 0.; 0. 1. 0.; 0. 0. 1.]
 spinsystem.magnetic_axes = R_m
 
 # determine the rotated magnetic field
 B0 = [0., 0., 1.]
-theta = 0:5:90 #collect(range(0.0,90.0,1))
-phi = 0:5:90 #collect(range(0.0,90.0,1))
-#B0_rot = rotation(B0,theta,phi,R_m) 
+theta = 0:5:90 
+phi = 40:5:45 #0:5:90 
 
 
 # modify the values (SpinSystem creates a mutable object):
 spinsystem.s_el = 0.5
 spinsystem.g_factor = [2.051,2.051,2.258] 
+#spinsystem.g_factor = [2.051,2.051,2.051] # isotropic for the test system 
 #spinsystem.B0 = [-0.748365, 0.567226, -0.343808]
 spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
@@ -54,10 +55,14 @@ for i in 1:size(theta)[1]
         angle_phi = deg2rad(phi[j])
         push!(tab_angle_phi, rad2deg(angle_phi))
 	
+	# define theta, phi for the test system
+	#angle_theta = deg2rad(0)
+	#angle_phi = deg2rad(0)
+
 	# determine rotated B0  
         B0_rot = rotation(B0,angle_theta,angle_phi,R_m)
         spinsystem.B0 = B0_rot
-	
+
 	# simulate intensity
         print("r_max: ",r_max,"\n")   
 	time,intensity = cce(spinsystem,angle_theta,angle_phi)
