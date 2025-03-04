@@ -10,9 +10,9 @@ using LinearAlgebra
 using Printf
 
 # import the readCIF.jl file to read cif files 
-#   --> export: distance_coordinates_el_nucs, n_nuc
 using readCIF
 using SpinBase
+using RotationMatrices
 
 # physical constants
 # reduced Planck constant 
@@ -61,7 +61,11 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
+    # determine magnetic axes --> false for the simulation of the intensity
     det_mag_axes::Bool
+    # define theta and phi for the rotation of the magnetic field
+    theta::Float64
+    phi::Float64
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -70,7 +74,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,0,0)
 
 """
     cce(system::SpinSystem)
@@ -88,7 +92,7 @@ Spectral diffusion of localized electron spins in the nuclear solid-state enviro
 Phys. Rev. B 2006, 74, 035322
 
 """
-function cce(system::SpinSystem,theta::Float64,phi::Float64)
+function cce(system::SpinSystem)
 
     println("")
     println("This is jlCCE")
@@ -96,7 +100,7 @@ function cce(system::SpinSystem,theta::Float64,phi::Float64)
 
     println("Running on ",Threads.nthreads()," threads\n")
  
-    if system.coord_file != "test"
+    if system.coord_file != "test" && system.coord_file != "test_rotated"
         # check cif file
         print("Coordinates will be read from: ",system.coord_file,"\n")
 
@@ -160,27 +164,45 @@ function cce(system::SpinSystem,theta::Float64,phi::Float64)
 	    #print(distance_coordinates_el_spin_oxygen)
 	    
     else   # system.coords_file = test
-        #n_nuc = 5
-        distance_coordinates_el_nucs = []
+    	println("Entered test mode")
 
-        println("Entered test mode")
+    	if system.coord_file == "test"
 
-        # test - keep these (used for test suite)
-        n_nuc = 2
-	# rotate the system
-	println("\n Investigation of rotated test system")
+            distance_coordinates_el_nucs = []
 
-	rot_mat_y = [cos(theta) 0 sin(theta); 0 1 0; +sin(theta) 0 cos(theta)]
-	rot_mat_z = [cos(phi) +sin(phi) 0; sin(phi) cos(phi) 0; 0 0 1]
+            # test - keep these (used for test suite)
+            n_nuc = 2
+
+	    I1 = [-10.,0.,10.]
+            I2 = [10.,0.,20.]
 	
-	I1 = [-10.,0.,10.]
-	I2 = [10.,0.,20.]
+	    push!(distance_coordinates_el_nucs,I1)
+            push!(distance_coordinates_el_nucs,I2)
 
-	I1_rot = rot_mat_z * (rot_mat_y*I1)
-	I2_rot = rot_mat_z * (rot_mat_y*I2)
+	elseif system.coord_file == "test_rotated" 
 
-        push!(distance_coordinates_el_nucs,I1_rot)
-        push!(distance_coordinates_el_nucs,I2_rot)
+            # rotate the system
+            #println("\n Investigation of rotated test system")
+	   
+	    distance_coordinates_el_nucs = []
+            
+	    n_nuc = 2
+
+	    theta = 90
+	    phi = 0
+
+	    rot_mat_y = [cos(theta) 0 sin(theta); 0 1 0; -sin(theta) 0 cos(theta)]
+	    rot_mat_z = [cos(phi) -sin(phi) 0; sin(phi) cos(phi) 0; 0 0 1]
+	
+	    I1 = [-10.,0.,10.]
+	    I2 = [10.,0.,20.]
+
+	    I1_rot = rot_mat_z * (rot_mat_y*I1)
+	    I2_rot = rot_mat_z * (rot_mat_y*I2)
+
+            push!(distance_coordinates_el_nucs,I1_rot)
+            push!(distance_coordinates_el_nucs,I2_rot)
+	end
     end
 
     println("Number of bath nuclei: ",n_nuc,"\n")   
@@ -191,22 +213,34 @@ function cce(system::SpinSystem,theta::Float64,phi::Float64)
     #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     #print(distance_coordinates_el_nucs,"\n") 
 
+    # rotate the applied magnetic field
+    rotation_matrix_y,rotation_matrix_z = rotation_matrices(system.theta,system.phi)
+    B0 = system.magnetic_axes * (rotation_matrix_z * (rotation_matrix_y * system.B0)) 
+    
+    println("Rotation of the inital magnetic field: ", system.B0)
+     
+    println("Rotation of the inital magnetic field:")
+    @printf "theta (Y) %10.2f °" rad2deg(system.theta)
+    @printf "phi (Z) %10.2f °" rad2deg(system.phi)
+    #println("Rotation angle around Y axis (theta): ", rad2deg(system.theta))
+    #println("Rotation angle around Z axis (phi): ", rad2deg(system.phi))
+    print("\n")
+
     println("Applied magnetic field:")
-    @printf " x  %20.6f Gauss\n" system.B0[1]
-    @printf " y  %20.6f Gauss\n" system.B0[2]
-    @printf " z  %20.6f Gauss\n\n" system.B0[3]
+    @printf " x  %20.6f Gauss\n" B0[1]
+    @printf " y  %20.6f Gauss\n" B0[2]
+    @printf " z  %20.6f Gauss\n\n" B0[3]
 
     #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
     # considering the anisotropy of the g factor --> determine an effective g factor
-    #g_eff = transpose(system.B0) * system.magnetic_axes * system.g_factor
-    g_eff = sqrt(system.g_factor[1]^2*cos(phi)^2*sin(theta)^2 + system.g_factor[2]^2*sin(phi)^2*sin(theta)^2 + system.g_factor[3]^2*cos(theta)^2)
+    Bnorm = B0/norm(B0)
+    g_eff = B0' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * B0 
 
-
-    println("magnetic axes:")
-    @printf " x  [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[1,2] system.magnetic_axes[1,3]
-    @printf " y  [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[2,1] system.magnetic_axes[2,2] system.magnetic_axes[2,3]
-    @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" system.magnetic_axes[3,1] system.magnetic_axes[3,2] system.magnetic_axes[3,3]
+    println("Magnetic axes:")
+    @printf "x [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[2,1] system.magnetic_axes[3,1]
+    @printf "y [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,2] system.magnetic_axes[2,2] system.magnetic_axes[3,2]
+    @printf "z [%10.6f %10.6f %10.6f] Å\n\n" system.magnetic_axes[1,3] system.magnetic_axes[2,3] system.magnetic_axes[3,3]
 
     println("g factor of ",system.coord_file,": ")
     @printf " x  %20.6f Å\n" system.g_factor[1]
