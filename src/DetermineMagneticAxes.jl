@@ -28,12 +28,9 @@ System(coord_file,spin_center,spin_center_index) = System(
     coord_file,spin_center,spin_center_index,"H",0,10,true)
 
 function det_mag_axes(system::System)
-    println("Determination of the magnetic axes")
-    println("========================================\n")
+    #println("Determination of the magnetic axes")
+    #println("==================================\n")
     
-    # check cif file
-    print("Coordinates will be read from: ",system.coord_file,"\n")
-
     # identify spin center
     if system.spin_center == "V"
         atomic_number_metal = 23
@@ -45,8 +42,6 @@ function det_mag_axes(system::System)
         print("Error currently only V, Cu and Pd \n")
         exit()
     end
-    print("\n")
-    print("Current metal of the spin center: ",system.spin_center,"\n")
 
     # identify nuclear spin bath 
     if system.nuc_spin_bath == "H"
@@ -59,41 +54,27 @@ function det_mag_axes(system::System)
     lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
         get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
 
-    println("\n")
-    println("lattice vectors:")
-    @printf " a = [%20.6f %20.6f  %20.6f]\n" lattice[1][1] lattice[1][2] lattice[1][3]
-    @printf " b = [%20.6f %20.6f  %20.6f]\n" lattice[2][1] lattice[2][2] lattice[2][3]
-    @printf " c = [%20.6f %20.6f  %20.6f]\n\n" lattice[3][1] lattice[3][2] lattice[3][3]
-
-    println("Selected nucleus ",system.spin_center," no. ",system.spin_center_index," in unit cell")
-    println("coordinates:")
-    @printf " x  %20.6f Å\n" coord_electron_spin[1]
-    @printf " y  %20.6f Å\n" coord_electron_spin[2]
-    @printf " z  %20.6f Å\n\n" coord_electron_spin[3]
-
     # call function set_supercell_list: determine the cell list
     cell_list = set_supercell_list(system.r_max,lattice)
    
     n_cell = size(cell_list,1)
-    println("r_max = ",system.r_max)
-    println("Number of replicated unit cells for spin bath: ",n_cell,"\n")
    
     distance_coordinates_el_spin_oxygen = 
         get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell,system.det_mag_axes)
  
     n_oxygen = size(distance_coordinates_el_spin_oxygen,1)
 
-    println("Number of restricted oxygen: ",n_oxygen)
+    #println("Number of restricted oxygen: ",n_oxygen)
     
-    print("\n")
-    println("Coordinates of oxygen:")
+    #print("\n")
+    #println("Coordinates of oxygen:")
 
     for i in 1:n_oxygen
         println("O", i,": ", distance_coordinates_el_spin_oxygen[i]," Å")
     end
 
-    print("\n")
-    println("Magnetic axes will be determined based on these coordinates. \n")
+    #print("\n")
+    #println("Magnetic axes will be determined based on these coordinates. \n")
     
 
     # determine the magnetic axes from the distance coordinates of oxygen
@@ -123,24 +104,25 @@ function det_mag_axes(system::System)
         #println("z2: ", z)
     end
 
-    R_m =  transpose([x y z]) 
+    R_m =  [x y z] 
     #println("check R_m: ", R_m)
 
-    if det(R_m) > 0.99
-        println("Magnetic axes: ")
-        @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[1,2] R_m[1,3]
-        @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
-        @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
-    else
-	nothing
+    #if det(R_m) > 0.99
+     #   println("Magnetic axes: ")
+     #   @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[2,1] R_m[3,1]
+     #   @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[1,2] R_m[2,2] R_m[3,2]
+     #   @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[1,3] R_m[2,3] R_m[3,3]
+    #else
+	#println("Determinat of the matrix of the magnetic axes is not equal to 1.")
         #R_m = [y x z]
         #if det(R_m) > 0.99
-	   println("Magnetic axes: ",)
-           @printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[1,1] R_m[1,2] R_m[1,3]
-           @printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[2,2] R_m[2,3]
-           @printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[3,1] R_m[3,2] R_m[3,3]
-	#else 
-	 #  R_m = [x z y]
+	   #println("Magnetic axes: ",)
+	   #@printf " x  [%10.6f %10.6f %10.6f] Å\n" R_m[2,1] R_m[1,1] R_m[3,1]
+           #@printf " y  [%10.6f %10.6f %10.6f] Å\n" R_m[2,2] R_m[1,2] R_m[3,2]
+           #@printf " z  [%10.6f %10.6f %10.6f] Å\n\n" R_m[2,3] R_m[1,3] R_m[3,3]
+
+	  #else 
+	  #  R_m = [x z y]
 	  #if det(R_m) > 0.99
           #else
           #    if 
@@ -148,7 +130,7 @@ function det_mag_axes(system::System)
           #    end
           #end
         #end
-    end
+    #end
 
     return R_m
 end
