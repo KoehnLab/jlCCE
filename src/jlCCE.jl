@@ -126,7 +126,6 @@ function cce(system::SpinSystem)
             exit()
         end
         print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
-        print("\n")
 
         # get list of spin bath nuclei using the module readCIF
 
@@ -219,9 +218,9 @@ function cce(system::SpinSystem)
     
     println("Rotation of the inital magnetic field: ", system.B0)
      
-    println("Rotation of the inital magnetic field:")
-    @printf "theta (Y) %10.2f °" rad2deg(system.theta)
-    @printf "phi (Z) %10.2f °" rad2deg(system.phi)
+    println("Rotation around:")
+    @printf "theta (Y) %10.2f ° \n" rad2deg(system.theta)
+    @printf "phi (Z)   %12.2f ° \n" rad2deg(system.phi)
     #println("Rotation angle around Y axis (theta): ", rad2deg(system.theta))
     #println("Rotation angle around Z axis (phi): ", rad2deg(system.phi))
     print("\n")
