@@ -69,9 +69,9 @@ function det_mag_axes(system::System)
     #print("\n")
     #println("Coordinates of oxygen:")
 
-    for i in 1:n_oxygen
-        println("O", i,": ", distance_coordinates_el_spin_oxygen[i]," Å")
-    end
+    #for i in 1:n_oxygen
+    #    println("O", i,": ", distance_coordinates_el_spin_oxygen[i]," Å")
+    #end
 
     #print("\n")
     #println("Magnetic axes will be determined based on these coordinates. \n")
@@ -88,7 +88,7 @@ function det_mag_axes(system::System)
     #println("y 1: ",y)
 
     # proof of orthogonality - Gram-Schmidt process
-    if dot(x,y) < 1e-5
+    if abs(dot(x,y)) < 1e-10
         z = cross(x,y)/norm(cross(x,y))
 
 	#println("z 1: ",z)
@@ -97,7 +97,7 @@ function det_mag_axes(system::System)
         u1 = x 
         # orthogonalize y to x
         u2 = y - dot(y,u1)*u1 
-        y = u2
+        y = u2/norm(u2)
         z = cross(x,y)/norm(cross(x,y))
         #println("x2: ", u1)
         #println("y2: ", u2)
