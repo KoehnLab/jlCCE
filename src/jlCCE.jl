@@ -12,7 +12,6 @@ using Printf
 # import the readCIF.jl file to read cif files 
 using readCIF
 using SpinBase
-using RotationMatrices
 
 # physical constants
 # reduced Planck constant 
@@ -63,9 +62,6 @@ mutable struct SpinSystem
     n_time_step::Int
     # determine magnetic axes --> false for the simulation of the intensity
     det_mag_axes::Bool
-    # define theta and phi for the rotation of the magnetic field
-    theta::Float64
-    phi::Float64
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -74,7 +70,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,0,0)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
 
 """
     cce(system::SpinSystem)
@@ -132,7 +128,7 @@ function cce(system::SpinSystem)
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
         lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell= 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,false)
 
         println("\n")
         println("lattice vectors:")
@@ -211,30 +207,30 @@ function cce(system::SpinSystem)
 
     #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     #print(distance_coordinates_el_nucs,"\n") 
-
-    # rotate the applied magnetic field
-    rotation_matrix_y,rotation_matrix_z = rotation_matrices(system.theta,system.phi)
-    B0 = system.magnetic_axes * (rotation_matrix_z * (rotation_matrix_y * system.B0)) 
     
-    println("Rotation of the inital magnetic field: ", system.B0)
+    # rotate the applied magnetic field
+    #rotation_matrix_y,rotation_matrix_z = rotation_matrices(system.theta,system.phi)
+    #B0 = system.magnetic_axes * (rotation_matrix_z * (rotation_matrix_y * system.B0)) 
+    
+    #println("Rotation of the inital magnetic field: ", system.B0)
      
-    println("Rotation around:")
-    @printf "theta (Y) %10.2f ° \n" rad2deg(system.theta)
-    @printf "phi (Z)   %12.2f ° \n" rad2deg(system.phi)
+    #println("Rotation around:")
+    #@printf "theta (Y) %10.2f ° \n" rad2deg(system.theta)
+    #@printf "phi (Z)   %12.2f ° \n" rad2deg(system.phi)
     #println("Rotation angle around Y axis (theta): ", rad2deg(system.theta))
     #println("Rotation angle around Z axis (phi): ", rad2deg(system.phi))
-    print("\n")
+    #print("\n")
 
     println("Applied magnetic field:")
-    @printf " x  %20.6f Gauss\n" B0[1]
-    @printf " y  %20.6f Gauss\n" B0[2]
-    @printf " z  %20.6f Gauss\n\n" B0[3]
+    @printf " x  %20.6f Gauss\n" system.B0[1]
+    @printf " y  %20.6f Gauss\n" system.B0[2]
+    @printf " z  %20.6f Gauss\n\n" system.B0[3]
 
     #print_matrix("Distances: ",distance_coordinates_el_nucs)
     
     # considering the anisotropy of the g factor --> determine an effective g factor
-    Bnorm = B0/norm(B0)
-    g_eff = B0' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * B0 
+    Bnorm = system.B0/norm(system.B0)
+    g_eff = Bnorm' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * Bnorm 
 
     println("Magnetic axes:")
     @printf "x [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[2,1] system.magnetic_axes[3,1]
@@ -247,7 +243,7 @@ function cce(system::SpinSystem)
     @printf " z  %20.6f Å\n\n" system.g_factor[3]
 
     println("Determined effective g factor: ",g_eff)
-
+ 
     # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
     gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
