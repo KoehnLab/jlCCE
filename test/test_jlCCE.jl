@@ -4,6 +4,7 @@ using jlCCE
 using jlCCEtools
 using SpinBase
 using readCIF
+using RotationMatrices
 using Test, LinearAlgebra
 
 
@@ -35,6 +36,27 @@ using Test, LinearAlgebra
 
 end
 
+@testset "Rotation Matrices" begin
+    
+    @test rotate_x(deg2rad(0)) ≈ [1. 0. 0.; 0. 1. 0.; 0. 0. 1.]
+
+    @test rotate_x(deg2rad(45)) ≈ [1. 0. 0.; 0. 0.7071067811865476 -0.7071067811865475; 0. 0.7071067811865475 0.7071067811865476]
+
+    @test rotate_x(deg2rad(90)) ≈ [1. 0. 0.; 0. 6.123233995736766e-17 -1.; 0. 1. 6.123233995736766e-17] 
+
+    @test rotate_y(deg2rad(0)) ≈ [1. 0. 0.; 0. 1. 0.; 0. 0. 1.]
+				     
+    @test rotate_y(deg2rad(45)) ≈ [0.7071067811865476 0. 0.7071067811865475; 0. 1. 0.; -0.7071067811865475 0. 0.7071067811865476]
+
+    @test rotate_y(deg2rad(90)) ≈ [6.123233995736766e-17 0. 1.; 0. 1. 0.; -1. 0. 6.123233995736766e-17]
+
+    @test rotate_z(deg2rad(0)) ≈ [1. 0. 0.; 0. 1. 0.; 0. 0. 1.]
+
+    @test rotate_z(deg2rad(45)) ≈ [0.7071067811865476 -0.7071067811865475 0.; 0.7071067811865475 0.7071067811865476 0.; 0. 0. 1.] 
+
+    @test rotate_z(deg2rad(90)) ≈ [6.12323e-17 -1. 0.; 1. 6.12323e-17 0.; 0. 0. 1.]
+
+end
 
 @testset "Read CIF" begin
 
