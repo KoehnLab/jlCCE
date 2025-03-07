@@ -3,9 +3,10 @@ push!(LOAD_PATH,"../../src")
 using jlCCE
 using jlCCEtools
 using DetermineMagneticAxes
+using RotationMatrices
 using Tables, CSV, DataFrames
 using BenchmarkTools
-
+using Printf
 
 # set system - use the simple constructor
 system = System("../cudbm2.pdb","Pd",1)
@@ -14,12 +15,16 @@ spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)
 # determine magnetic axes from geometry
 system.det_mag_axes = true
 R_m = det_mag_axes(system)
+println("R_m: ",R_m)
 spinsystem.magnetic_axes = R_m
 
 # determine the rotated magnetic field
-spinsystem.B0 = [0., 0., 1.]
+B0 = [0., 0., 1.]
 theta = 0.:10:360.
-phi = 0.:10:360. 
+phi = 0.:10:360.
+#rot_mat = rotate_solid(deg2rad(theta),deg2rad(phi))
+#spinsystem.B0 = R_m * (rot_mat * B0) 
+#println("B0: ",spinsystem.B0)
 
 # modify the values (SpinSystem creates a mutable object):
 spinsystem.s_el = 0.5
@@ -40,26 +45,28 @@ tab_angle_theta = Vector{Float64}()
 tab_angle_phi = Vector{Float64}()
 tab_Tm = Vector{Float64}()
 
-df = DataFrame(Theta=Float64[], Phi=Float64[], Tm=Float64[])
+df = DataFrame(theta=Float64[], phi=Float64[], Tm=Float64[])
 
 for i in 1:size(theta)[1] 
     for j in 1:size(phi)[1]
-	# determine theta for the loop
-	spinsystem.theta = deg2rad(theta[i])
-        push!(tab_angle_theta, rad2deg(spinsystem.theta))
-	# determine phi for the loop 
-        spinsystem.phi = deg2rad(phi[j])
-        push!(tab_angle_phi, rad2deg(spinsystem.phi))
+        rot_mat = rotate_solid(deg2rad(theta[i]),deg2rad(phi[j]))
+	spinsystem.B0 = R_m * (rot_mat * B0)
+	push!(tab_angle_theta, theta[i])
+        push!(tab_angle_phi, phi[j])
 	
 	# simulate intensity
         #print("r_max: ",r_max,"\n")   
 	time,intensity = cce(spinsystem)
         
+ 	println("Rotation around:")
+        @printf "theta (Y) %10.2f ° \n" theta[i]
+        @printf "phi (Z)   %12.2f ° \n" phi[j]
+
 	# determine Tm
 	Tm = 2*get_decay_time(time,intensity)*10^6
 	push!(tab_Tm, Tm)
 
-	push!(df, (spinsystem.theta, spinsystem.phi, Tm))
+	push!(df, (theta[i], phi[j], Tm))
 
 	println("Simulated intensity: ",intensity,"\n") 
 	println("Determined coherent time: ", Tm, "\n") 
@@ -70,7 +77,7 @@ end
 
 
 #CSV.write("echo.csv", Tables.table([tab_angle_theta tab_angle_phi tab_Tm]))
-CSV.write("echo_360_degree.csv", df)
+CSV.write("echo_90_degree.csv", df)
 
 
 
