@@ -14,18 +14,14 @@ mutable struct System
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
-    # nuclei defining spin bath ("H", etc.)
-    nuc_spin_bath::String
     # minimum interaction radius (usually 0.)
     r_min::Float64
     # maximum interaction radius
     r_max::Float64
-    # determine magnetic axes using the geometry of the molecule --> det_mag_axes = true
-    det_mag_axes::Bool
 end
 
 System(coord_file,spin_center,spin_center_index) = System(
-    coord_file,spin_center,spin_center_index,"H",0,10,true)
+    coord_file,spin_center,spin_center_index,0,10)
 
 function det_mag_axes(system::System)
     #println("Determination of the magnetic axes")
@@ -43,13 +39,6 @@ function det_mag_axes(system::System)
         exit()
     end
 
-    # identify nuclear spin bath 
-    if system.nuc_spin_bath == "H"
-        atomic_number_nuclei = 1
-    else 
-        print("Error only proton bath \n")
-        exit()
-    end
      
     lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell = 
         get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,system.det_mag_axes)
