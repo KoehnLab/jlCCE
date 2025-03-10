@@ -1,6 +1,6 @@
 module readCIF
 
-export get_coordinates, set_supercell_list, get_bath_list
+export get_coordinates, get_spin_center, get_coordinates_ligand_atoms, set_supercell_list, get_bath_list, get_list_ligand_atoms
 
 using AtomsIO
 using LinearAlgebra
@@ -22,7 +22,7 @@ returns: lattice - lattice vectors of the crystal
         coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """
-function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int,det_mag_axes::Bool)
+function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
@@ -52,16 +52,78 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     idx_nuclei = findall(x -> x==atomic_number_nuclei,atomic_n)
     coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
 
-    # get the coordinates of oxygen within the unit cell --> to determine the magnetic axes 
-    if det_mag_axes
-        atomic_number_oxygen = 8
-        idx_oxygen = findall(x -> x==atomic_number_oxygen,atomic_n)
-        coords_oxygen_unit_cell = coords_atoms_unit_cell[idx_oxygen]
-    else 
-        coords_oxygen_unit_cell = nothing
-    end
-    return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell
+    return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell
 end
+
+
+"""
+    get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::Int)
+
+extract the relevant information from the CIF - determine the coordinates
+of the electron spin center
+
+input: cif_file - name of the file
+       atomic_number_metal - atomic number describing the metal center
+       idx_metal  -  counter to select among several metal centers in the unit cell
+
+returns: lattice - lattice vectors of the crystal
+        coord_metal_atom - coordinates of the spin center (metal atom)
+        coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
+
+"""
+function get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::Int)
+    # extract relevant information from CIF
+    system = load_system(cif_file)
+
+    # coordinates in unit cell and translation vectors (lattice)
+    coords_atoms_unit_cell = ustrip.(position(system))
+    lattice = ustrip.(system.bounding_box)
+
+    # atomic numbers for identifying spin centers
+    atomic_n = atomic_number(system)
+
+    # get the coordinates of the spin center on the metal atom
+    idx_list = findall(x -> x==atomic_number_metal,atomic_n)
+    if idx_metal > size(idx_list)[1]
+        println("requested index: ", idx_metal)
+        println("number of such centers in unit cell: ", size(idx_list))
+        error("requested index for selecting spin center is too large")
+    end
+    idx_metal_atom = idx_list[idx_metal]
+    coord_electron_spin = coords_atoms_unit_cell[idx_metal_atom]
+
+    return lattice,coord_electron_spin
+end
+
+"""
+    get_coordinates_ligand_atoms(cif_file::String,atomic_number_ligand_atoms::Int)
+
+extract the coordinates of specific ligand atoms
+
+input: cif_file - name of the file
+       atomic_number_ligand_atoms - atomic number describing the atom of the ligand
+                                                                    
+
+returns: coords_ligand_atoms_unit_cell - coordinates of the specific ligand atoms 
+
+"""
+function get_coordinates_ligand_atoms(cif_file::String,atomic_number_ligand_atom::Int)
+    # extract relevant information from CIF
+    system = load_system(cif_file)
+
+    # coordinates in unit cell and translation vectors (lattice)
+    coords_atoms_unit_cell = ustrip.(position(system))
+
+    # atomic numbers for identifying spin centers
+    atomic_n = atomic_number(system)
+
+    # get the coordinates of specific ligand atoms within the unit cell --> to determine the magnetic axes
+    idx_ligand_atoms = findall(x -> x==atomic_number_ligand_atom,atomic_n)
+    coords_ligand_atoms_unit_cell = coords_atoms_unit_cell[idx_ligand_atoms]
+
+    return coords_ligand_atoms_unit_cell
+end
+
 
 """
     set_supercell_list(r_max,lattice)
@@ -129,7 +191,7 @@ and another list with their (absolute) coordinates to later compute their
 relative positions
 
 """
-function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center,coords_oxygen_unit_cell,det_mag_axes::Bool)
+function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center)
 
     # call set_supercell_list here (as we only need it here)
     cell_list = set_supercell_list(r_max,lattice)
@@ -137,8 +199,6 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
     # initialize outputs lists for spin bath
     #coordinates_nuclear_spins = Vector{}[]
     distance_coordinates_el_nucs = Vector{}[]
-    distance_coordinates_el_spin_oxygen = Vector{}[]
-    #distance_el_spin_oxygen = Vector{}[]
     #distance_coordinates_nuc_nuc = Vector{}[]
     n_nuc = 0
 
@@ -165,32 +225,46 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
         end
 	end 
 
-
-    if det_mag_axes 
-        for Tidx in eachindex(cell_list)
-            # construct the shift vector for this cell
-            shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
-	        # calculate the (shfted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
-	        for Aidx in eachindex(coords_oxygen_unit_cell)
-                # coordinates of oxygen atoms in the crystal structure
-                coords_oxygen = coords_oxygen_unit_cell[Aidx] + shift  
-                distance_coords_el_spin_oxygen = coords_oxygen - coord_spin_center
-                distance_el_spin_oxygen = norm(distance_coords_el_spin_oxygen)
-
-                # restricted oxygens (nearest oxygen around the electron spin) 
-                if distance_el_spin_oxygen <= 2.0
-                push!(distance_coordinates_el_spin_oxygen,distance_coords_el_spin_oxygen) 
-                end 
-            end
-        end
-        return distance_coordinates_el_spin_oxygen
-    else 
-        return distance_coordinates_el_nucs,n_nuc
-    end
-        
-
+    return distance_coordinates_el_nucs,n_nuc        
 end
    
+
+"""
+    get_list_ligand_atoms(r_max,lattice,coord_spin_center,r_max_ligand_atoms)
+
+get a list of specific ligand atoms with their distances from the spin center 
+and another list with their (absolue) coordinates to later compute their
+relative positions
+
+"""
+function get_list_ligand_atoms(r_max::Float64,lattice,coord_spin_center,r_max_ligand_atoms::Float64)
+    # call set_supercell_list here (as we only need it here)
+    cell_list = set_supercell_list(r_max,lattice)
+ 
+    # initialize outputs lists for the ligand atoms
+    distance_coordinates_ligand_atoms = Vector{}[]
+
+    for Tidx in eachindex(cell_list)
+    # construct the shift vector for this cell
+    shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
+    # calculate the (shfted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
+        for Aidx in eachindex(coords_ligand_atoms_unit_cell)
+            # coordinates of oxygen atoms in the crystal structure
+            coords_ligand_atoms = coords_ligand_atoms_unit_cell[Aidx] + shift  
+            distance_coords_ligand_atoms = coords_ligand_atoms - coord_spin_center
+            distance_el_ligand_atoms = norm(distance_coords_ligand_atoms)
+
+            # restricted oxygens (nearest oxygen around the electron spin) 
+            if distance_el_ligand_atoms <= r_max_ligand_atoms
+            push!(distance_coordinates_ligand_atoms,distance_el_ligand_atoms) 
+            end 
+        end
+    end
+
+    return distance_coordinates_ligand_atoms
+end
+
+
 # quick testing - remove or comment out before using as module
 #cif_file = "/home/suchaneck/masterarbeit/cif_files/vopc.cif"
 #atomic_number_metal = 23
