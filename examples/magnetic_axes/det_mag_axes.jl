@@ -1,18 +1,20 @@
 push!(LOAD_PATH,"../../src")
 
 using DetermineMagneticAxes
+using jlCCE
 using LinearAlgebra
 using Printf
 
 # set system - use the simple constructor
-system = System("../cudbm2.pdb","Pd",1) 
+#system = SpinSystem("../cudbm2.pdb","Pd",1) 
+#system.atomic_number_ligand_atom = 8
+#system.r_max_ligand_atoms = 2.0
+
+system = SpinSystem("../cudbm2.pdb","Pd",1,2.0)
 
 # run
-R_m = det_mag_axes(system)
-
-
-
-
+system.nuc_spin_bath = "O"
+R_m = determine_mag_axes(system)
 
 
 
