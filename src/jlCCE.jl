@@ -72,7 +72,7 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "H",0.5,5.58569468,
     [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
 
-SpinSystem(coord_file,spin_center,spin_center_index,ligand_index,distance_ligand) = SpinSystem(
+SpinSystem(coord_file,spin_center,spin_center_index,distance_ligand) = SpinSystem(
     coord_file,spin_center,spin_center_index,distance_ligand,
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
