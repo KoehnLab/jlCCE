@@ -31,6 +31,8 @@ mutable struct SpinSystem
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
+    # maximum distance of the ligand atom to the spin center
+    r_max_ligand_atoms::Float64
     # type of simulation
     simulation_type::String
     use_exp::Bool
@@ -60,17 +62,23 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
-    # determine magnetic axes --> false for the simulation of the intensity
-    det_mag_axes::Bool
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
-    coord_file,spin_center,spin_center_index,
+    coord_file,spin_center,spin_center_index,2.0,
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false)
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
+
+SpinSystem(coord_file,spin_center,spin_center_index,ligand_index,distance_ligand) = SpinSystem(
+    coord_file,spin_center,spin_center_index,distance_ligand,
+    "highfield_analytic",false,true,
+    0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
+    "H",0.5,5.58569468,
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
+
 
 """
     cce(system::SpinSystem)
@@ -127,8 +135,8 @@ function cce(system::SpinSystem)
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell,coords_oxygen_unit_cell= 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei,false)
+        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
+            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
 
         println("\n")
         println("lattice vectors:")
@@ -154,7 +162,7 @@ function cce(system::SpinSystem)
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
         distance_coordinates_el_nucs,n_nuc= 
-            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin,coords_oxygen_unit_cell,system.det_mag_axes)
+            get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
             #print("oxygen coords: \n")
 	    #print(distance_coordinates_el_spin_oxygen)
 	    
@@ -168,10 +176,10 @@ function cce(system::SpinSystem)
             # test - keep these (used for test suite)
             n_nuc = 2
 
-	    I1 = [-10.,0.,10.]
-            I2 = [10.,0.,20.]
+	        I1 = [20.,0.,0.]
+            I2 = [23.,0.,0.]
 	
-	    push!(distance_coordinates_el_nucs,I1)
+	        push!(distance_coordinates_el_nucs,I1)
             push!(distance_coordinates_el_nucs,I2)
 
 	elseif system.coord_file == "test_rotated" 
@@ -189,8 +197,8 @@ function cce(system::SpinSystem)
 	    rot_mat_y = [cos(theta) 0 sin(theta); 0 1 0; -sin(theta) 0 cos(theta)]
 	    rot_mat_z = [cos(phi) -sin(phi) 0; sin(phi) cos(phi) 0; 0 0 1]
 	
-	    I1 = [-10.,0.,10.]
-	    I2 = [10.,0.,20.]
+	    I1 = [20.,0.,0.]
+        I2 = [23.,0.,0.]
 
 	    I1_rot = rot_mat_z * (rot_mat_y*I1)
 	    I2_rot = rot_mat_z * (rot_mat_y*I2)
@@ -280,7 +288,7 @@ function cce(system::SpinSystem)
         iCCE2 = intensity
     elseif system.simulation_type == "exact"
         intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
-             system.s_nuc,gamma_n,system.s_el,gamma_electron,system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
+             system.s_nuc,gamma_n,system.s_el,[gamma_electron, gamma_electron, gamma_electron],system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
     else
         print("Unkonwn simulation type: ",system.simulation_type,"\n")
         intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
