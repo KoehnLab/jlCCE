@@ -19,7 +19,6 @@ input: cif_file - name of the file
 
 returns: lattice - lattice vectors of the crystal
         coord_metal_atom - coordinates of the spin center (metal atom)
-        coords_nuclear_spins_unit_cell - coordinates of the nuclei of the spin bath
 
 """ 
 function get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::Int)
@@ -50,13 +49,12 @@ end
 """
     get_coordinates_nuclear_spins(cif_file::String,atomic_number_ligand_atoms::Int)
 
-extract the coordinates of specific ligand atoms
+extract the coordinates of nuclear spins in the spin bath
 
 input: cif_file - name of the file
-       atomic_number_ligand_atoms - atomic number describing the atom of the ligand
+       atomic_number_nuclei - atomic number describing the nuclei of the spin bath
                                                                     
-
-returns: coords_ligand_atoms_unit_cell - coordinates of the specific ligand atoms 
+returns: coords_nuclear_spins_unit_cell - coordinates of nuclear spins in the bath 
 
 """
 function get_coordinates_nuclear_spins(cif_file::String,atomic_number_nuclei::Int)
@@ -266,7 +264,7 @@ and another list with their (absolue) coordinates to later compute their
 relative positions
 
 """
-function get_list_ligand_atoms(lattice,coords_ligand_atoms_unit_cell,coord_spin_center,r_max_ligand_atoms::Float64)
+function get_list_ligand_atoms(r_max_ligand_atoms::Float64,lattice,coords_ligand_atoms_unit_cell,coord_spin_center)
     # call set_supercell_list here (as we only need it here)
     cell_list = set_supercell_list(r_max_ligand_atoms,lattice)
  
