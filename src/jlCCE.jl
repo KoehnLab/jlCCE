@@ -31,6 +31,8 @@ mutable struct SpinSystem
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
+    # nuclei defining spin bath ("H", etc.)
+    nuc_spin_bath::String
     # maximum distance of the ligand atom to the spin center
     r_max_ligand_atoms::Float64
     # type of simulation
@@ -43,8 +45,6 @@ mutable struct SpinSystem
     g_factor::Vector{Float64}
     # magnetic axes of spin center (column vectors for x, y, z direction)
     magnetic_axes::Matrix{Float64}
-    # nuclei defining spin bath ("H", etc.)
-    nuc_spin_bath::String
     # spin quantum number of nuclei
     s_nuc::Float64
     # corresponding nuclear g factor
@@ -66,17 +66,17 @@ end
 
 # convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
-    coord_file,spin_center,spin_center_index,2.0,
+    coord_file,spin_center,spin_center_index,"H",2.0,
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
-    "H",0.5,5.58569468,
+    0.5,5.58569468,
     [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
 
-SpinSystem(coord_file,spin_center,spin_center_index,distance_ligand) = SpinSystem(
-    coord_file,spin_center,spin_center_index,distance_ligand,
+SpinSystem(coord_file,spin_center,spin_center_index,nuc_spin_bath,distance_ligand) = SpinSystem(
+    coord_file,spin_center,spin_center_index,nuc_spin_bath,distance_ligand,
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
-    "H",0.5,5.58569468,
+    0.5,5.58569468,
     [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
 
 
