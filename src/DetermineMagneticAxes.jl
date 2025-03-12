@@ -67,25 +67,23 @@ function determine_mag_axes(system::SpinSystem)
     lattice,coord_electron_spin = 
         get_spin_center(system.coord_file,atomic_number_metal,system.spin_center_index)
 
+    println("\n")
+
     # call function get_coordinates_ligand_atoms: determine coordinates of specific ligand atoms (oxygen) 
     # in the unit cell
     coords_ligand_atoms_unit_cell = 
         get_coordinates_nuclear_spins(system.coord_file,atomic_number_nuclei)
-    
+
     # call get_list_ligand_atoms: determine coordinates of the ligand atoms 
-    coordinates_distance_ligand_atoms = 
-        get_list_ligand_atoms(lattice,coords_ligand_atoms_unit_cell,coord_electron_spin,system.r_max_ligand_atoms)
-
-    n_ligand_atoms = size(coordinates_distance_ligand_atoms,1)
-
-    println("Number of restricted ligand atoms: ",n_ligand_atoms)
+    coordinates_distance_ligand_atoms,n_nuc = 
+        get_bath_list(system.r_min,system.r_max_ligand_atoms,lattice,coords_ligand_atoms_unit_cell,coord_electron_spin)
     
-    print("\n")
-    println("Coordinates of ligand atoms:")
+    #print("\n")
+    #println("Coordinates of ligand atoms:")
 
-    for i in 1:n_ligand_atoms
-        println("O", i,": ", coordinates_distance_ligand_atoms[i]," Å")
-    end
+    #for i in 1:n_ligand_atoms
+    #    println("O", i,": ", coordinates_distance_ligand_atoms[i]," Å")
+    #end
 
     #print("\n")
     #println("Magnetic axes will be determined based on these coordinates. \n")
