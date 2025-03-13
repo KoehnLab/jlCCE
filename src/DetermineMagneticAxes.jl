@@ -61,7 +61,7 @@ function determine_mag_axes(system::SpinSystem)
         print("Error only proton/oxygen bath \n")
         exit()
     end
-    print("Considered nuclear spins: ",system.nuc_spin_bath,"\n")
+    #print("Considered nuclear spins: ",system.nuc_spin_bath,"\n")
 
     # call function get_spin_center: determine lattice and coordinates of the spin center
     lattice,coord_electron_spin = 
