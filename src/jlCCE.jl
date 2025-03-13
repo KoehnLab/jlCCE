@@ -135,8 +135,14 @@ function cce(system::SpinSystem)
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
             # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
+        lattice,coord_electron_spin = 
+            get_spin_center(system.coord_file,atomic_number_metalsystem.spin_center_index)
+        
+        coords_nuclear_spins_unit_cell = 
+            get_coordinates_nuclear_spins(system.coord_file,atomic_number_nuclei)
+        
+        #lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
+        #    get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
 
         println("\n")
         println("lattice vectors:")
