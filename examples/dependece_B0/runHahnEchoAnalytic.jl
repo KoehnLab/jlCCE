@@ -8,11 +8,10 @@ using Tables, CSV, DataFrames
 using BenchmarkTools
 using Printf
 
-# set system - use the simple constructor
-#system = System("../cudbm2.pdb","Pd",1)
 spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  
 
 # determine magnetic axes from geometry
+spinsystem = SpinSystem("../cudbm2.pdb","Pd",1,"O",2.0)
 R_m = determine_mag_axes(spinsystem)
 println("R_m: ",R_m)
 spinsystem.magnetic_axes = R_m
@@ -26,8 +25,10 @@ phi = 0.:10:360.
 #println("B0: ",spinsystem.B0)
 
 # modify the values (SpinSystem creates a mutable object):
+spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)
 spinsystem.s_el = 0.5
-spinsystem.g_factor = [2.051,2.051,2.258] 
+#spinsystem.g_factor = [2.051,2.051,2.258] # anisotropic 
+spinsystem.g_factor = [2.12,2.12,2.12] # g_iso
 spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
 r_max = 35
@@ -75,7 +76,7 @@ end
 
 
 #CSV.write("echo.csv", Tables.table([tab_angle_theta tab_angle_phi tab_Tm]))
-CSV.write("echo_90_degree.csv", df)
+CSV.write("echo_cudbm2_isotropic_360_degree.csv", df)
 
 
 
