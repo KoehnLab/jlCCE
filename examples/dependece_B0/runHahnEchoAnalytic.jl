@@ -8,7 +8,7 @@ using Tables, CSV, DataFrames
 using BenchmarkTools
 using Printf
 
-spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  
+#spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)  
 
 # determine magnetic axes from geometry
 spinsystem = SpinSystem("../cudbm2.pdb","Pd",1,"O",2.0)
@@ -27,11 +27,10 @@ phi = 0.:10:360.
 # modify the values (SpinSystem creates a mutable object):
 spinsystem = SpinSystem("../cudbm2.pdb","Pd",1)
 spinsystem.s_el = 0.5
-#spinsystem.g_factor = [2.051,2.051,2.258] # anisotropic 
-spinsystem.g_factor = [2.12,2.12,2.12] # g_iso
+spinsystem.g_factor = [2.051,2.051,2.258] # anisotropic 
+#spinsystem.g_factor = [2.12,2.12,2.12] # g_iso
 spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
-r_max = 35
 spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
 spinsystem.t_max = 15e-6 # s
@@ -49,7 +48,7 @@ df = DataFrame(theta=Float64[], phi=Float64[], Tm=Float64[])
 for i in 1:size(theta)[1] 
     for j in 1:size(phi)[1]
         rot_mat = rotate_solid(deg2rad(theta[i]),deg2rad(phi[j]))
-		spinsystem.B0 = R_m * (rot_mat * B0)
+		spinsystem.B0 = (rot_mat * B0)
 		push!(tab_angle_theta, theta[i])
         push!(tab_angle_phi, phi[j])
 	
@@ -76,7 +75,7 @@ end
 
 
 #CSV.write("echo.csv", Tables.table([tab_angle_theta tab_angle_phi tab_Tm]))
-CSV.write("echo_cudbm2_isotropic_360_degree.csv", df)
+CSV.write("echo_cudbm2_anisotropic_360_degree_B0_cartesian_coords.csv", df)
 
 
 
