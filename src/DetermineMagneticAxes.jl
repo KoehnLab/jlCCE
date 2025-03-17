@@ -7,29 +7,8 @@ using Printf
 using jlCCE
 using readCIF
 
-#mutable struct System
-    # file with coordinates (anything that the file read can handle)
-#    coord_file::String
-    # name of the atom defining the spin center ("Cu", "V", ...)
-#    spin_center::String
-    # index within unit cell to select spin center, if name is not unique
-#    spin_center_index::Int
-    # atomic number of the ligand atom 
-#    atomic_number_ligand_atom::Int
-    # maximum distance of the ligand atom to the spin center
-#    r_max_ligand_atoms::Float64
-    # minimum interaction radius (usually 0.)
-#    r_min::Float64
-    # maximum interaction radius
-#    r_max::Float64
-#end
-
-#System(coord_file,spin_center,spin_center_index) = System(
-#    coord_file,spin_center,spin_center_index,8,2,0,10)
-
-
 """
-    determine_mag_axes(system::System)
+    determine_mag_axes(system::SpinSystem)
 
 input: SpinSystem (exported from jlCCE.jl) 
 
@@ -57,6 +36,8 @@ function determine_mag_axes(system::SpinSystem)
         atomic_number_nuclei = 1
     elseif system.nuc_spin_bath == "O"
         atomic_number_nuclei = 8
+    elseif system.nuc_spin_bath == "N"
+        atomic_number_nuclei = 7
     else 
         print("Error only proton/oxygen bath \n")
         exit()
@@ -67,7 +48,7 @@ function determine_mag_axes(system::SpinSystem)
     lattice,coord_electron_spin = 
         get_spin_center(system.coord_file,atomic_number_metal,system.spin_center_index)
 
-    println("\n")
+    #println("\n")
 
     # call function get_coordinates_ligand_atoms: determine coordinates of specific ligand atoms (oxygen) 
     # in the unit cell
@@ -75,9 +56,11 @@ function determine_mag_axes(system::SpinSystem)
         get_coordinates_nuclear_spins(system.coord_file,atomic_number_nuclei)
 
     # call get_list_ligand_atoms: determine coordinates of the ligand atoms 
-    coordinates_distance_ligand_atoms,n_nuc = 
+    coordinates_distance_ligand_atoms,n_ligand_atoms = 
         get_bath_list(system.r_min,system.r_max_ligand_atoms,lattice,coords_ligand_atoms_unit_cell,coord_electron_spin)
     
+    println("Number of considered ligand atoms: ", n_ligand_atoms)
+
     #print("\n")
     #println("Coordinates of ligand atoms:")
 
