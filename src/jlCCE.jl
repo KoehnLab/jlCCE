@@ -222,11 +222,6 @@ function cce(system::SpinSystem)
     #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
     #print(distance_coordinates_el_nucs,"\n") 
     
-    # rotate the applied magnetic field
-    #rotation_matrix_y,rotation_matrix_z = rotation_matrices(system.theta,system.phi)
-    #B0 = system.magnetic_axes * (rotation_matrix_z * (rotation_matrix_y * system.B0)) 
-    
-    #println("Rotation of the inital magnetic field: ", system.B0)
      
     #println("Rotation around:")
     #@printf "theta (Y) %10.2f ° \n" rad2deg(system.theta)
