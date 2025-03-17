@@ -7,14 +7,16 @@ using RotationMatrices
 using Tables, CSV
 using BenchmarkTools
 
-# set system - use the simple constructor
-#spinsystem = SpinSystem("cudbm2.pdb","Pd",1)  # <--- note: put this file into the folder
-
 # determine magnetic axes from geometry
-spinsystem = SpinSystem("cudbm2.pdb","Pd",1,"O",2.0)
+spinsystem = SpinSystem("cumnt2_2pph4.cif","Cu",1,"S",3.0)
+spinsystem.r_min = 0.
 R_m = determine_mag_axes(spinsystem)
 #println("R_m: ",R_m)
-spinsystem.magnetic_axes = R_m
+#spinsystem.magnetic_axes = R_m
+
+
+# cce settings
+spinsystem = SpinSystem("cumnt2_2pph4.cif","Cu",1)
 
 # define the magnetic field
 B0 = [0., 0., 1.]
@@ -22,11 +24,12 @@ theta = 0.
 phi = 0.
 rot_mat = rotate_solid(deg2rad(theta),deg2rad(phi))
 spinsystem.B0 = R_m * (rot_mat * B0)
+#println("B0: ",spinsystem.B0)
 
 # define the spinsystem for thr run of the simulation
-spinsystem = SpinSystem("cudbm2.pdb","Pd",1)
+spinsystem.magnetic_axes = R_m
 spinsystem.s_el = 0.5
-spinsystem.g_factor = [2.051,2.051,2.258] 
+spinsystem.g_factor = [2.0837,2.0210,2.0199]
 spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
 spinsystem.r_max_bath = 10.
@@ -42,7 +45,6 @@ times,intensity = cce(spinsystem)
 print("\n")
 print("Simulated intensity: ",intensity,"\n")
 print("\n")
-#println("Simulation time: ", times)
 # determine the coherence time Tm
 Tm = 2*get_decay_time(times,intensity)*10^6
 println("Simulated coherence time: ",Tm,"\n")
