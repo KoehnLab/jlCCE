@@ -34,10 +34,12 @@ function determine_mag_axes(system::SpinSystem)
     # identify nuclear spin bath 
     if system.nuc_spin_bath == "H"
         atomic_number_nuclei = 1
-    elseif system.nuc_spin_bath == "O"
-        atomic_number_nuclei = 8
     elseif system.nuc_spin_bath == "N"
         atomic_number_nuclei = 7
+    elseif system.nuc_spin_bath == "O"
+        atomic_number_nuclei = 8
+    elseif system.nuc_spin_bath == "S"
+        atomic_number_nuclei = 16
     else 
         print("Error only proton/oxygen bath \n")
         exit()
