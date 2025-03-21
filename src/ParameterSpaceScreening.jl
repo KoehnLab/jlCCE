@@ -1,6 +1,8 @@
 module ParameterSpaceScreening
 
-export pss
+using LinearAlgebra
+
+export get_distance_vectors,pss
 
 # physical constants
 # reduced Planck constant 
@@ -25,9 +27,10 @@ input: R - distance between electron spin and center of mass of nuclear spins
 the function returns distance vectors between the electron spin and the two nuclear spins 
     as well as a distance vector between the nuclear spins 
 """
-function get_distance_vectors(R::Vector{Float64},R_12::Vector{Float64},alpha::Float64)
+function get_distance_vectors(R::Float64,R_12::Float64,alpha::Float64)
+    println("")
     println("Determine distance vectors using Jacobi coordinates")
-    println("---------------------------------------------------")
+    println("---------------------------------------------------\n")
     vec_r = [R, 0., 0.]
     vec_r12 = [R_12 * cos(alpha), R_12 * sin(alpha), 0.]
     vec_r1 = vec_r + 1/2 * vec_r12
@@ -60,9 +63,12 @@ the function returns the modulation depth, the nuclear zero-quantum frequency an
     for a given pair of Jacobi coordinates
 """
 function pss(vec_r1::Vector{Float64},vec_r2::Vector{Float64},vec_r12::Vector{Float64},g_e::Float64,g_n::Float64, time::Float64, B0::Vector{Float64})
+    println("")
     println("Parameter Space Screening")
-    println("-------------------------")
+    println("-------------------------\n")
     
+    println("Running on ",Threads.nthreads()," threads\n")
+
     # determine the gryomagnetic ratio
     gamma_electron = (g_e * mu_b)/ hbar
     gamma_n = (g_n * mu_n) / hbar
@@ -74,16 +80,16 @@ function pss(vec_r1::Vector{Float64},vec_r2::Vector{Float64},vec_r12::Vector{Flo
 
     # precompute values of the hyperfine coupling constant A for electron nucleus pairs
     # nuc. 1
-    r1_cross_B0 = cross(r_1,B0)
-    r1_dot_B0 = dot(r_1,B0)
-    theta_1 = atan2(norm(r1_cross_B0),r1_dot_B0)
+    r1_cross_B0 = cross(r1,B0)
+    r1_dot_B0 = dot(r1,B0)
+    theta_1 = atan(norm(r1_cross_B0),r1_dot_B0)
     r1_norm = norm(r1)
     A_1 = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_1)^2) / r1_norm^3
     
     # nuc. 2
-    r2_cross_B0 = cross(r_2,B0)
-    r2_dot_B0 = dot(r_2,B0)
-    theta_2 = atan2(norm(r2_cross_B0),r2_dot_B0)
+    r2_cross_B0 = cross(r2,B0)
+    r2_dot_B0 = dot(r2,B0)
+    theta_2 = atan(norm(r2_cross_B0),r2_dot_B0)
     r2_norm = norm(r2)
     A_2 = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_2)^2) / r2_norm^3
     println("Hyperfine coupling constants A of nuc. 1,2 in Hz: ", A_1," ",A_2)
@@ -91,7 +97,7 @@ function pss(vec_r1::Vector{Float64},vec_r2::Vector{Float64},vec_r12::Vector{Flo
     # precompute value of the coupling constant b 
     r12_cross_B0 = cross(r12,B0);
     r12_dot_B0 = dot(r12,B0);
-    theta_12 = atan2(norm(r12_cross_B0),r12_dot_B0);
+    theta_12 = atan(norm(r12_cross_B0),r12_dot_B0);
     b_12 = (- 1/4) * gamma_n^2 * hbar * ((1 - 3* cos(theta_12)^2)/(norm(r12))^3); 
     println("Coupling constant b in Hz: ",b_12)
 
