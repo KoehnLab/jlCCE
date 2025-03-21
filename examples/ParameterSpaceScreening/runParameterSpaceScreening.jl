@@ -14,7 +14,7 @@ alpha = pi/4
 g_e = 2.002;
 g_n = 5.586;
 time = 10e-6
-B0 = [1., 0., 0.];
+B0 = [0., 0., 1.];
 
 # summarize results in tables
 tab_R = Vector{Float64}()
