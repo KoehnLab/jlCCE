@@ -1,391 +1,251 @@
-####################################################################### 
-# 
-# This file contains crystal structure data downloaded from the 
-# Cambridge Structural Database (CSD) hosted by the Cambridge 
-# Crystallographic Data Centre (CCDC).
-# 
-# Full information about CCDC data access policies and citation 
-# guidelines are available at http://www.ccdc.cam.ac.uk/access/V1 
-# 
-# Audit and citation data items may have been added by the CCDC. 
-# Please retain this information to preserve the provenance of 
-# this file and to allow appropriate attribution of the data. 
-# 
-#######################################################################
 
-data_15
-_audit_block_doi                 10.5517/ccn73yx
-_database_code_depnum_ccdc_archive 'CCDC 602669'
-loop_
-_citation_id
-_citation_doi
-_citation_year
-1 10.1039/b604319d 2006
-_audit_update_record             
-;
-2006-03-24 deposited with the CCDC.	2025-01-29 downloaded from the CCDC.
-;
+#======================================================================
+# CRYSTAL DATA
+#----------------------------------------------------------------------
+data_VESTA_phase_1
 
-_audit_creation_method           SHELXL-97
-_chemical_name_systematic        
-;
-?
-;
-_chemical_name_common            ?
-_chemical_melting_point          ?
-_chemical_formula_moiety         'C6 H12 N O2, 0.5(C4 Cu O4 S4)'
-_chemical_formula_sum            'C8 H12 Cu0.50 N O4 S2'
-_chemical_formula_weight         282.10
+_chemical_name_common                  'C6 H12 N O2, 0.5(C4 Cu O4 S4)'
+_cell_length_a                         23.275999
+_cell_length_b                         9.183700
+_cell_length_c                         11.898000
+_cell_angle_alpha                      90.000000
+_cell_angle_beta                       117.028000
+_cell_angle_gamma                      90.000000
+_cell_volume                           2265.544705
+_space_group_name_H-M_alt              'P 1'
+_space_group_IT_number                 1
 
 loop_
-_atom_type_symbol
-_atom_type_description
-_atom_type_scat_dispersion_real
-_atom_type_scat_dispersion_imag
-_atom_type_scat_source
-C C 0.0033 0.0016 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-H H 0.0000 0.0000 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-N N 0.0061 0.0033 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-O O 0.0106 0.0060 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-S S 0.1246 0.1234 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-Cu Cu 0.3201 1.2651 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
-
-_symmetry_cell_setting           Monoclinic
-_symmetry_space_group_name_H-M   C2/c
-_symmetry_space_group_name_Hall  '-C 2yc'
-loop_
-_symmetry_equiv_pos_as_xyz
-'x, y, z'
-'-x, y, -z+1/2'
-'x+1/2, y+1/2, z'
-'-x+1/2, y+1/2, -z+1/2'
-'-x, -y, -z'
-'x, -y, z-1/2'
-'-x+1/2, -y+1/2, -z'
-'x+1/2, -y+1/2, z-1/2'
-
-_cell_length_a                   23.276(4)
-_cell_length_b                   9.1837(16)
-_cell_length_c                   11.898(2)
-_cell_angle_alpha                90.00
-_cell_angle_beta                 117.028(3)
-_cell_angle_gamma                90.00
-_cell_volume                     2265.4(7)
-_cell_formula_units_Z            8
-_cell_measurement_temperature    173(2)
-_cell_measurement_reflns_used    1024
-_cell_measurement_theta_min      2.804
-_cell_measurement_theta_max      20.5655
-
-_exptl_crystal_description       prism
-_exptl_crystal_colour            brown
-_exptl_crystal_size_max          0.30
-_exptl_crystal_size_mid          0.25
-_exptl_crystal_size_min          0.15
-_exptl_crystal_density_meas      ?
-_exptl_crystal_density_diffrn    1.654
-_exptl_crystal_density_method    'not measured'
-_exptl_crystal_F_000             1164
-_exptl_absorpt_coefficient_mu    1.378
-_exptl_absorpt_correction_type   multi-scan
-_exptl_absorpt_correction_T_min  0.6342609
-_exptl_absorpt_correction_T_max  0.8138949
-_exptl_absorpt_process_details   'SADABS (Bruker, 1996)'
-
-_exptl_special_details           
-;
-?
-;
-
-_diffrn_ambient_temperature      173(2)
-_diffrn_radiation_wavelength     0.71073
-_diffrn_radiation_type           MoK\a
-_diffrn_radiation_source         'fine-focus sealed tube'
-_diffrn_radiation_monochromator  graphite
-_diffrn_measurement_device_type  'CCD area detector'
-_diffrn_measurement_method       'phi and omega scans'
-_diffrn_detector_area_resol_mean ?
-_diffrn_standards_number         ?
-_diffrn_standards_interval_count ?
-_diffrn_standards_interval_time  ?
-_diffrn_standards_decay_%        ?
-_diffrn_reflns_number            9561
-_diffrn_reflns_av_R_equivalents  0.1125
-_diffrn_reflns_av_sigmaI/netI    0.1153
-_diffrn_reflns_limit_h_min       -27
-_diffrn_reflns_limit_h_max       27
-_diffrn_reflns_limit_k_min       -10
-_diffrn_reflns_limit_k_max       10
-_diffrn_reflns_limit_l_min       -14
-_diffrn_reflns_limit_l_max       14
-_diffrn_reflns_theta_min         1.96
-_diffrn_reflns_theta_max         25.00
-_reflns_number_total             1992
-_reflns_number_gt                1108
-_reflns_threshold_expression     >2sigma(I)
-
-_computing_data_collection       'Bruker SMART'
-_computing_cell_refinement       'Bruker SMART'
-_computing_data_reduction        'Bruker SHELXTL'
-_computing_structure_solution    'SHELXS-97 (Sheldrick, 1990)'
-_computing_structure_refinement  'SHELXL-97 (Sheldrick, 1997)'
-_computing_molecular_graphics    'Bruker SHELXTL'
-_computing_publication_material  'Bruker SHELXTL'
-
-_refine_special_details          
-;
-Refinement of F^2^ against ALL reflections. The weighted R-factor wR and
-goodness of fit S are based on F^2^, conventional R-factors R are based
-on F, with F set to zero for negative F^2^. The threshold expression of
-F^2^ > 2sigma(F^2^) is used only for calculating R-factors(gt) etc. and is
-not relevant to the choice of reflections for refinement. R-factors based
-on F^2^ are statistically about twice as large as those based on F, and R-
-factors based on ALL data will be even larger.
-;
-
-_refine_ls_structure_factor_coef Fsqd
-_refine_ls_matrix_type           full
-_refine_ls_weighting_scheme      calc
-_refine_ls_weighting_details     
-'calc w=1/[\s^2^(Fo^2^)+(0.0420P)^2^+0.0000P] where P=(Fo^2^+2Fc^2^)/3'
-_atom_sites_solution_primary     direct
-_atom_sites_solution_secondary   difmap
-_atom_sites_solution_hydrogens   geom
-_refine_ls_hydrogen_treatment    constr
-_refine_ls_extinction_method     none
-_refine_ls_extinction_coef       ?
-_refine_ls_number_reflns         1992
-_refine_ls_number_parameters     143
-_refine_ls_number_restraints     0
-_refine_ls_R_factor_all          0.1143
-_refine_ls_R_factor_gt           0.0448
-_refine_ls_wR_factor_ref         0.1034
-_refine_ls_wR_factor_gt          0.0839
-_refine_ls_goodness_of_fit_ref   0.906
-_refine_ls_restrained_S_all      0.906
-_refine_ls_shift/su_max          0.003
-_refine_ls_shift/su_mean         0.001
+_space_group_symop_operation_xyz
+   'x, y, z'
 
 loop_
-_atom_site_label
-_atom_site_type_symbol
-_atom_site_fract_x
-_atom_site_fract_y
-_atom_site_fract_z
-_atom_site_U_iso_or_equiv
-_atom_site_adp_type
-_atom_site_occupancy
-_atom_site_symmetry_multiplicity
-_atom_site_calc_flag
-_atom_site_refinement_flags
-_atom_site_disorder_assembly
-_atom_site_disorder_group
-Cu1 Cu 0.7500 0.7500 0.0000 0.0249(3) Uani 1 2 d S . .
-S1 S 0.71662(7) 0.62723(16) -0.18688(12) 0.0338(4) Uani 1 1 d . . .
-O1 O 0.76185(16) 0.6804(4) -0.3475(3) 0.0365(10) Uani 1 1 d . . .
-C1 C 0.7705(2) 0.6868(6) -0.2385(5) 0.0257(13) Uani 1 1 d . . .
-O4 O 0.47809(17) 0.6656(4) -0.1655(3) 0.0282(9) Uani 1 1 d . . .
-H4C H 0.4924 0.6796 -0.2180 0.042 Uiso 0.55(5) 1 calc PR . .
-O3 O 0.48186(18) 0.9080(4) -0.1610(3) 0.0363(10) Uani 1 1 d . . .
-H3C H 0.4932 0.8934 -0.2177 0.054 Uiso 0.45(5) 1 calc PR . .
-C8 C 0.4716(2) 0.7863(6) -0.1217(5) 0.0251(13) Uani 1 1 d . . .
-C4 C 0.4402(2) 0.6376(5) 0.0204(4) 0.0268(13) Uani 1 1 d . . .
-H4A H 0.4084 0.5853 -0.0550 0.032 Uiso 1 1 calc R . .
-H4B H 0.4810 0.5817 0.0553 0.032 Uiso 1 1 calc R . .
-C5 C 0.4518(2) 0.7897(5) -0.0180(4) 0.0219(12) Uani 1 1 d . . .
-H5A H 0.4878 0.8352 0.0575 0.026 Uiso 1 1 calc R . .
-N1 N 0.35635(19) 0.7350(5) 0.0702(3) 0.0268(11) Uani 1 1 d . . .
-H1A H 0.3414 0.7372 0.1297 0.032 Uiso 1 1 calc R . .
-H1B H 0.3250 0.6927 -0.0017 0.032 Uiso 1 1 calc R . .
-C6 C 0.3923(2) 0.8863(5) -0.0566(4) 0.0264(13) Uani 1 1 d . . .
-H6A H 0.4033 0.9872 -0.0690 0.032 Uiso 1 1 calc R . .
-H6B H 0.3577 0.8514 -0.1380 0.032 Uiso 1 1 calc R . .
-C3 C 0.4156(2) 0.6457(6) 0.1178(4) 0.0248(13) Uani 1 1 d . . .
-H3A H 0.4062 0.5463 0.1374 0.030 Uiso 1 1 calc R . .
-H3B H 0.4491 0.6890 0.1965 0.030 Uiso 1 1 calc R . .
-C7 C 0.3677(3) 0.8862(6) 0.0411(5) 0.0321(14) Uani 1 1 d . . .
-H7A H 0.3997 0.9340 0.1191 0.039 Uiso 1 1 calc R . .
-H7B H 0.3270 0.9422 0.0091 0.039 Uiso 1 1 calc R . .
-S2 S 0.84747(7) 0.79239(16) 0.00834(12) 0.0367(4) Uani 1 1 d . . .
-O2 O 0.87790(16) 0.7657(4) -0.1765(3) 0.0322(9) Uani 1 1 d . . .
-C2 C 0.8366(2) 0.7510(6) -0.1408(4) 0.0262(12) Uani 1 1 d . . .
+   _atom_site_label
+   _atom_site_occupancy
+   _atom_site_fract_x
+   _atom_site_fract_y
+   _atom_site_fract_z
+   _atom_site_adp_type
+   _atom_site_U_iso_or_equiv
+   _atom_site_type_symbol
+   Cu1        1.0     0.750000     0.750000     0.000000    Uiso  ? Cu
+   Cu2        1.0     0.250000     0.250000     0.000000    Uiso  ? Cu
+   Cu3        1.0     0.250000     0.750000     0.500000    Uiso  ? Cu
+   Cu4        1.0     0.750000     0.250000     0.500000    Uiso  ? Cu
+   S1         1.0     0.716620     0.627230     0.813120    Uiso  ? S
+   S2         1.0     0.283380     0.372770     0.186880    Uiso  ? S
+   S3         1.0     0.283380     0.627230     0.686880    Uiso  ? S
+   S4         1.0     0.716620     0.372770     0.313120    Uiso  ? S
+   S5         1.0     0.216620     0.127230     0.813120    Uiso  ? S
+   S6         1.0     0.783380     0.872770     0.186880    Uiso  ? S
+   S7         1.0     0.783380     0.127230     0.686880    Uiso  ? S
+   S8         1.0     0.216620     0.872770     0.313120    Uiso  ? S
+   S9         1.0     0.847470     0.792390     0.008340    Uiso  ? S
+   S10        1.0     0.152530     0.207610     0.991660    Uiso  ? S
+   S11        1.0     0.152530     0.792390     0.491660    Uiso  ? S
+   S12        1.0     0.847470     0.207610     0.508340    Uiso  ? S
+   S13        1.0     0.347470     0.292390     0.008340    Uiso  ? S
+   S14        1.0     0.652530     0.707610     0.991660    Uiso  ? S
+   S15        1.0     0.652530     0.292390     0.491660    Uiso  ? S
+   S16        1.0     0.347470     0.707610     0.508340    Uiso  ? S
+   O1         1.0     0.761850     0.680400     0.652500    Uiso  ? O
+   O2         1.0     0.238150     0.319600     0.347500    Uiso  ? O
+   O3         1.0     0.238150     0.680400     0.847500    Uiso  ? O
+   O4         1.0     0.761850     0.319600     0.152500    Uiso  ? O
+   O5         1.0     0.261850     0.180400     0.652500    Uiso  ? O
+   O6         1.0     0.738150     0.819600     0.347500    Uiso  ? O
+   O7         1.0     0.738150     0.180400     0.847500    Uiso  ? O
+   O8         1.0     0.261850     0.819600     0.152500    Uiso  ? O
+   O9         1.0     0.478090     0.665600     0.834500    Uiso  ? O
+   O10        1.0     0.521910     0.334400     0.165500    Uiso  ? O
+   O11        1.0     0.521910     0.665600     0.665500    Uiso  ? O
+   O12        1.0     0.478090     0.334400     0.334500    Uiso  ? O
+   O13        1.0     0.978090     0.165600     0.834500    Uiso  ? O
+   O14        1.0     0.021910     0.834400     0.165500    Uiso  ? O
+   O15        1.0     0.021910     0.165600     0.665500    Uiso  ? O
+   O16        1.0     0.978090     0.834400     0.334500    Uiso  ? O
+   O17        1.0     0.481860     0.908000     0.839000    Uiso  ? O
+   O18        1.0     0.518140     0.092000     0.161000    Uiso  ? O
+   O19        1.0     0.518140     0.908000     0.661000    Uiso  ? O
+   O20        1.0     0.481860     0.092000     0.339000    Uiso  ? O
+   O21        1.0     0.981860     0.408000     0.839000    Uiso  ? O
+   O22        1.0     0.018140     0.592000     0.161000    Uiso  ? O
+   O23        1.0     0.018140     0.408000     0.661000    Uiso  ? O
+   O24        1.0     0.981860     0.592000     0.339000    Uiso  ? O
+   O25        1.0     0.877900     0.765700     0.823500    Uiso  ? O
+   O26        1.0     0.122100     0.234300     0.176500    Uiso  ? O
+   O27        1.0     0.122100     0.765700     0.676500    Uiso  ? O
+   O28        1.0     0.877900     0.234300     0.323500    Uiso  ? O
+   O29        1.0     0.377900     0.265700     0.823500    Uiso  ? O
+   O30        1.0     0.622100     0.734300     0.176500    Uiso  ? O
+   O31        1.0     0.622100     0.265700     0.676500    Uiso  ? O
+   O32        1.0     0.377900     0.734300     0.323500    Uiso  ? O
+   C1         1.0     0.770500     0.686800     0.761500    Uiso  ? C
+   C2         1.0     0.229500     0.313200     0.238500    Uiso  ? C
+   C3         1.0     0.229500     0.686800     0.738500    Uiso  ? C
+   C4         1.0     0.770500     0.313200     0.261500    Uiso  ? C
+   C5         1.0     0.270500     0.186800     0.761500    Uiso  ? C
+   C6         1.0     0.729500     0.813200     0.238500    Uiso  ? C
+   C7         1.0     0.729500     0.186800     0.738500    Uiso  ? C
+   C8         1.0     0.270500     0.813200     0.261500    Uiso  ? C
+   C9         1.0     0.471600     0.786300     0.878300    Uiso  ? C
+   C10        1.0     0.528400     0.213700     0.121700    Uiso  ? C
+   C11        1.0     0.528400     0.786300     0.621700    Uiso  ? C
+   C12        1.0     0.471600     0.213700     0.378300    Uiso  ? C
+   C13        1.0     0.971600     0.286300     0.878300    Uiso  ? C
+   C14        1.0     0.028400     0.713700     0.121700    Uiso  ? C
+   C15        1.0     0.028400     0.286300     0.621700    Uiso  ? C
+   C16        1.0     0.971600     0.713700     0.378300    Uiso  ? C
+   C17        1.0     0.440200     0.637600     0.020400    Uiso  ? C
+   C18        1.0     0.559800     0.362400     0.979600    Uiso  ? C
+   C19        1.0     0.559800     0.637600     0.479600    Uiso  ? C
+   C20        1.0     0.440200     0.362400     0.520400    Uiso  ? C
+   C21        1.0     0.940200     0.137600     0.020400    Uiso  ? C
+   C22        1.0     0.059800     0.862400     0.979600    Uiso  ? C
+   C23        1.0     0.059800     0.137600     0.479600    Uiso  ? C
+   C24        1.0     0.940200     0.862400     0.520400    Uiso  ? C
+   C25        1.0     0.451800     0.789700     0.982000    Uiso  ? C
+   C26        1.0     0.548200     0.210300     0.018000    Uiso  ? C
+   C27        1.0     0.548200     0.789700     0.518000    Uiso  ? C
+   C28        1.0     0.451800     0.210300     0.482000    Uiso  ? C
+   C29        1.0     0.951800     0.289700     0.982000    Uiso  ? C
+   C30        1.0     0.048200     0.710300     0.018000    Uiso  ? C
+   C31        1.0     0.048200     0.289700     0.518000    Uiso  ? C
+   C32        1.0     0.951800     0.710300     0.482000    Uiso  ? C
+   C33        1.0     0.392300     0.886300     0.943400    Uiso  ? C
+   C34        1.0     0.607700     0.113700     0.056600    Uiso  ? C
+   C35        1.0     0.607700     0.886300     0.556600    Uiso  ? C
+   C36        1.0     0.392300     0.113700     0.443400    Uiso  ? C
+   C37        1.0     0.892300     0.386300     0.943400    Uiso  ? C
+   C38        1.0     0.107700     0.613700     0.056600    Uiso  ? C
+   C39        1.0     0.107700     0.386300     0.556600    Uiso  ? C
+   C40        1.0     0.892300     0.613700     0.443400    Uiso  ? C
+   C41        1.0     0.415600     0.645700     0.117800    Uiso  ? C
+   C42        1.0     0.584400     0.354300     0.882200    Uiso  ? C
+   C43        1.0     0.584400     0.645700     0.382200    Uiso  ? C
+   C44        1.0     0.415600     0.354300     0.617800    Uiso  ? C
+   C45        1.0     0.915600     0.145700     0.117800    Uiso  ? C
+   C46        1.0     0.084400     0.854300     0.882200    Uiso  ? C
+   C47        1.0     0.084400     0.145700     0.382200    Uiso  ? C
+   C48        1.0     0.915600     0.854300     0.617800    Uiso  ? C
+   C49        1.0     0.367700     0.886200     0.041100    Uiso  ? C
+   C50        1.0     0.632300     0.113800     0.958900    Uiso  ? C
+   C51        1.0     0.632300     0.886200     0.458900    Uiso  ? C
+   C52        1.0     0.367700     0.113800     0.541100    Uiso  ? C
+   C53        1.0     0.867700     0.386200     0.041100    Uiso  ? C
+   C54        1.0     0.132300     0.613800     0.958900    Uiso  ? C
+   C55        1.0     0.132300     0.386200     0.458900    Uiso  ? C
+   C56        1.0     0.867700     0.613800     0.541100    Uiso  ? C
+   C57        1.0     0.836600     0.751000     0.859200    Uiso  ? C
+   C58        1.0     0.163400     0.249000     0.140800    Uiso  ? C
+   C59        1.0     0.163400     0.751000     0.640800    Uiso  ? C
+   C60        1.0     0.836600     0.249000     0.359200    Uiso  ? C
+   C61        1.0     0.336600     0.251000     0.859200    Uiso  ? C
+   C62        1.0     0.663400     0.749000     0.140800    Uiso  ? C
+   C63        1.0     0.663400     0.251000     0.640800    Uiso  ? C
+   C64        1.0     0.336600     0.749000     0.359200    Uiso  ? C
+   H1         1.0     0.507600     0.679600     0.718000    Uiso  ? H
+   H2         1.0     0.492400     0.320400     0.282000    Uiso  ? H
+   H3         1.0     0.007600     0.179600     0.718000    Uiso  ? H
+   H4         1.0     0.992400     0.820400     0.282000    Uiso  ? H
+   H5         1.0     0.493200     0.893400     0.782300    Uiso  ? H
+   H6         1.0     0.506800     0.106600     0.217700    Uiso  ? H
+   H7         1.0     0.993200     0.393400     0.782300    Uiso  ? H
+   H8         1.0     0.006800     0.606600     0.217700    Uiso  ? H
+   H9         1.0     0.408400     0.585300     0.945000    Uiso  ? H
+   H10        1.0     0.591600     0.414700     0.055000    Uiso  ? H
+   H11        1.0     0.591600     0.585300     0.555000    Uiso  ? H
+   H12        1.0     0.408400     0.414700     0.445000    Uiso  ? H
+   H13        1.0     0.908400     0.085300     0.945000    Uiso  ? H
+   H14        1.0     0.091600     0.914700     0.055000    Uiso  ? H
+   H15        1.0     0.091600     0.085300     0.555000    Uiso  ? H
+   H16        1.0     0.908400     0.914700     0.445000    Uiso  ? H
+   H17        1.0     0.481000     0.581700     0.055300    Uiso  ? H
+   H18        1.0     0.519000     0.418300     0.944700    Uiso  ? H
+   H19        1.0     0.519000     0.581700     0.444700    Uiso  ? H
+   H20        1.0     0.481000     0.418300     0.555300    Uiso  ? H
+   H21        1.0     0.981000     0.081700     0.055300    Uiso  ? H
+   H22        1.0     0.019000     0.918300     0.944700    Uiso  ? H
+   H23        1.0     0.019000     0.081700     0.444700    Uiso  ? H
+   H24        1.0     0.981000     0.918300     0.555300    Uiso  ? H
+   H25        1.0     0.487800     0.835200     0.057500    Uiso  ? H
+   H26        1.0     0.512200     0.164800     0.942500    Uiso  ? H
+   H27        1.0     0.512200     0.835200     0.442500    Uiso  ? H
+   H28        1.0     0.487800     0.164800     0.557500    Uiso  ? H
+   H29        1.0     0.987800     0.335200     0.057500    Uiso  ? H
+   H30        1.0     0.012200     0.664800     0.942500    Uiso  ? H
+   H31        1.0     0.012200     0.335200     0.442500    Uiso  ? H
+   H32        1.0     0.987800     0.664800     0.557500    Uiso  ? H
+   H33        1.0     0.341400     0.737200     0.129700    Uiso  ? H
+   H34        1.0     0.658600     0.262800     0.870300    Uiso  ? H
+   H35        1.0     0.658600     0.737200     0.370300    Uiso  ? H
+   H36        1.0     0.341400     0.262800     0.629700    Uiso  ? H
+   H37        1.0     0.841400     0.237200     0.129700    Uiso  ? H
+   H38        1.0     0.158600     0.762800     0.870300    Uiso  ? H
+   H39        1.0     0.158600     0.237200     0.370300    Uiso  ? H
+   H40        1.0     0.841400     0.762800     0.629700    Uiso  ? H
+   H41        1.0     0.325000     0.692700     0.998300    Uiso  ? H
+   H42        1.0     0.675000     0.307300     0.001700    Uiso  ? H
+   H43        1.0     0.675000     0.692700     0.501700    Uiso  ? H
+   H44        1.0     0.325000     0.307300     0.498300    Uiso  ? H
+   H45        1.0     0.825000     0.192700     0.998300    Uiso  ? H
+   H46        1.0     0.175000     0.807300     0.001700    Uiso  ? H
+   H47        1.0     0.175000     0.192700     0.501700    Uiso  ? H
+   H48        1.0     0.825000     0.807300     0.498300    Uiso  ? H
+   H49        1.0     0.403300     0.987200     0.931000    Uiso  ? H
+   H50        1.0     0.596700     0.012800     0.069000    Uiso  ? H
+   H51        1.0     0.596700     0.987200     0.569000    Uiso  ? H
+   H52        1.0     0.403300     0.012800     0.431000    Uiso  ? H
+   H53        1.0     0.903300     0.487200     0.931000    Uiso  ? H
+   H54        1.0     0.096700     0.512800     0.069000    Uiso  ? H
+   H55        1.0     0.096700     0.487200     0.569000    Uiso  ? H
+   H56        1.0     0.903300     0.512800     0.431000    Uiso  ? H
+   H57        1.0     0.357700     0.851400     0.862000    Uiso  ? H
+   H58        1.0     0.642300     0.148600     0.138000    Uiso  ? H
+   H59        1.0     0.642300     0.851400     0.638000    Uiso  ? H
+   H60        1.0     0.357700     0.148600     0.362000    Uiso  ? H
+   H61        1.0     0.857700     0.351400     0.862000    Uiso  ? H
+   H62        1.0     0.142300     0.648600     0.138000    Uiso  ? H
+   H63        1.0     0.142300     0.351400     0.638000    Uiso  ? H
+   H64        1.0     0.857700     0.648600     0.362000    Uiso  ? H
+   H65        1.0     0.406200     0.546300     0.137400    Uiso  ? H
+   H66        1.0     0.593800     0.453700     0.862600    Uiso  ? H
+   H67        1.0     0.593800     0.546300     0.362600    Uiso  ? H
+   H68        1.0     0.406200     0.453700     0.637400    Uiso  ? H
+   H69        1.0     0.906200     0.046300     0.137400    Uiso  ? H
+   H70        1.0     0.093800     0.953700     0.862600    Uiso  ? H
+   H71        1.0     0.093800     0.046300     0.362600    Uiso  ? H
+   H72        1.0     0.906200     0.953700     0.637400    Uiso  ? H
+   H73        1.0     0.449100     0.689000     0.196500    Uiso  ? H
+   H74        1.0     0.550900     0.311000     0.803500    Uiso  ? H
+   H75        1.0     0.550900     0.689000     0.303500    Uiso  ? H
+   H76        1.0     0.449100     0.311000     0.696500    Uiso  ? H
+   H77        1.0     0.949100     0.189000     0.196500    Uiso  ? H
+   H78        1.0     0.050900     0.811000     0.803500    Uiso  ? H
+   H79        1.0     0.050900     0.189000     0.303500    Uiso  ? H
+   H80        1.0     0.949100     0.811000     0.696500    Uiso  ? H
+   H81        1.0     0.399700     0.934000     0.119100    Uiso  ? H
+   H82        1.0     0.600300     0.066000     0.880900    Uiso  ? H
+   H83        1.0     0.600300     0.934000     0.380900    Uiso  ? H
+   H84        1.0     0.399700     0.066000     0.619100    Uiso  ? H
+   H85        1.0     0.899700     0.434000     0.119100    Uiso  ? H
+   H86        1.0     0.100300     0.566000     0.880900    Uiso  ? H
+   H87        1.0     0.100300     0.434000     0.380900    Uiso  ? H
+   H88        1.0     0.899700     0.566000     0.619100    Uiso  ? H
+   H89        1.0     0.327000     0.942200     0.009100    Uiso  ? H
+   H90        1.0     0.673000     0.057800     0.990900    Uiso  ? H
+   H91        1.0     0.673000     0.942200     0.490900    Uiso  ? H
+   H92        1.0     0.327000     0.057800     0.509100    Uiso  ? H
+   H93        1.0     0.827000     0.442200     0.009100    Uiso  ? H
+   H94        1.0     0.173000     0.557800     0.990900    Uiso  ? H
+   H95        1.0     0.173000     0.442200     0.490900    Uiso  ? H
+   H96        1.0     0.827000     0.557800     0.509100    Uiso  ? H
+   N1         1.0     0.356350     0.735000     0.070200    Uiso  ? N
+   N2         1.0     0.643650     0.265000     0.929800    Uiso  ? N
+   N3         1.0     0.643650     0.735000     0.429800    Uiso  ? N
+   N4         1.0     0.356350     0.265000     0.570200    Uiso  ? N
+   N5         1.0     0.856350     0.235000     0.070200    Uiso  ? N
+   N6         1.0     0.143650     0.765000     0.929800    Uiso  ? N
+   N7         1.0     0.143650     0.235000     0.429800    Uiso  ? N
+   N8         1.0     0.856350     0.765000     0.570200    Uiso  ? N
 
-loop_
-_atom_site_aniso_label
-_atom_site_aniso_U_11
-_atom_site_aniso_U_22
-_atom_site_aniso_U_33
-_atom_site_aniso_U_23
-_atom_site_aniso_U_13
-_atom_site_aniso_U_12
-Cu1 0.0217(5) 0.0331(6) 0.0208(5) 0.0002(5) 0.0105(4) -0.0008(5)
-S1 0.0270(9) 0.0502(11) 0.0268(8) -0.0073(7) 0.0145(7) -0.0115(8)
-O1 0.027(2) 0.062(3) 0.024(2) -0.0063(18) 0.0144(18) -0.006(2)
-C1 0.023(3) 0.034(3) 0.021(3) 0.001(2) 0.011(3) 0.005(3)
-O4 0.038(2) 0.023(2) 0.034(2) -0.0028(17) 0.0252(19) -0.0019(18)
-O3 0.058(3) 0.025(2) 0.044(2) -0.0048(19) 0.039(2) -0.006(2)
-C8 0.024(3) 0.028(4) 0.026(3) -0.002(3) 0.014(2) -0.001(3)
-C4 0.027(3) 0.030(3) 0.023(3) 0.005(3) 0.012(3) 0.004(3)
-C5 0.020(3) 0.023(3) 0.023(3) -0.001(2) 0.010(2) 0.003(2)
-N1 0.023(3) 0.038(3) 0.022(2) 0.004(2) 0.0131(19) 0.003(2)
-C6 0.029(3) 0.024(3) 0.034(3) 0.002(3) 0.021(3) 0.001(3)
-C3 0.021(3) 0.029(3) 0.023(3) 0.004(2) 0.008(2) 0.007(3)
-C7 0.030(4) 0.034(4) 0.035(3) 0.005(3) 0.017(3) 0.007(3)
-S2 0.0271(9) 0.0584(12) 0.0273(8) -0.0130(7) 0.0146(7) -0.0129(7)
-O2 0.025(2) 0.048(3) 0.030(2) -0.0009(19) 0.0184(17) -0.006(2)
-C2 0.029(3) 0.024(3) 0.026(3) 0.004(3) 0.012(2) 0.004(3)
-
-_geom_special_details            
-;
-All esds (except the esd in the dihedral angle between two l.s. planes)
-are estimated using the full covariance matrix. The cell esds are taken
-into account individually in the estimation of esds in distances, angles
-and torsion angles; correlations between esds in cell parameters are only
-used when they are defined by crystal symmetry. An approximate (isotropic)
-treatment of cell esds is used for estimating esds involving l.s. planes.
-;
-
-loop_
-_geom_bond_atom_site_label_1
-_geom_bond_atom_site_label_2
-_geom_bond_distance
-_geom_bond_site_symmetry_2
-_geom_bond_publ_flag
-Cu1 S2 2.2592(14) 7_665 ?
-Cu1 S2 2.2592(14) . ?
-Cu1 S1 2.2909(13) 7_665 ?
-Cu1 S1 2.2910(13) . ?
-S1 C1 1.716(5) . ?
-O1 C1 1.221(5) . ?
-C1 C2 1.562(7) . ?
-O4 C8 1.262(6) . ?
-O4 H4C 0.8400 . ?
-O3 C8 1.275(6) . ?
-O3 H3C 0.8400 . ?
-C8 C5 1.502(6) . ?
-C4 C3 1.510(6) . ?
-C4 C5 1.532(6) . ?
-C4 H4A 0.9900 . ?
-C4 H4B 0.9900 . ?
-C5 C6 1.529(6) . ?
-C5 H5A 1.0000 . ?
-N1 C3 1.478(6) . ?
-N1 C7 1.483(6) . ?
-N1 H1A 0.9200 . ?
-N1 H1B 0.9200 . ?
-C6 C7 1.511(6) . ?
-C6 H6A 0.9900 . ?
-C6 H6B 0.9900 . ?
-C3 H3A 0.9900 . ?
-C3 H3B 0.9900 . ?
-C7 H7A 0.9900 . ?
-C7 H7B 0.9900 . ?
-S2 C2 1.717(5) . ?
-O2 C2 1.223(6) . ?
-
-loop_
-_geom_angle_atom_site_label_1
-_geom_angle_atom_site_label_2
-_geom_angle_atom_site_label_3
-_geom_angle
-_geom_angle_site_symmetry_1
-_geom_angle_site_symmetry_3
-_geom_angle_publ_flag
-S2 Cu1 S2 180.0 7_665 . ?
-S2 Cu1 S1 91.05(5) 7_665 7_665 ?
-S2 Cu1 S1 88.95(5) . 7_665 ?
-S2 Cu1 S1 88.95(5) 7_665 . ?
-S2 Cu1 S1 91.05(5) . . ?
-S1 Cu1 S1 180.000(1) 7_665 . ?
-C1 S1 Cu1 102.10(18) . . ?
-O1 C1 C2 116.1(4) . . ?
-O1 C1 S1 124.8(4) . . ?
-C2 C1 S1 119.1(3) . . ?
-C8 O4 H4C 109.5 . . ?
-C8 O3 H3C 109.5 . . ?
-O4 C8 O3 122.8(4) . . ?
-O4 C8 C5 119.7(5) . . ?
-O3 C8 C5 117.4(4) . . ?
-C3 C4 C5 111.3(4) . . ?
-C3 C4 H4A 109.4 . . ?
-C5 C4 H4A 109.4 . . ?
-C3 C4 H4B 109.4 . . ?
-C5 C4 H4B 109.4 . . ?
-H4A C4 H4B 108.0 . . ?
-C8 C5 C6 109.9(4) . . ?
-C8 C5 C4 112.8(4) . . ?
-C6 C5 C4 111.1(4) . . ?
-C8 C5 H5A 107.6 . . ?
-C6 C5 H5A 107.6 . . ?
-C4 C5 H5A 107.6 . . ?
-C3 N1 C7 112.0(4) . . ?
-C3 N1 H1A 109.2 . . ?
-C7 N1 H1A 109.2 . . ?
-C3 N1 H1B 109.2 . . ?
-C7 N1 H1B 109.2 . . ?
-H1A N1 H1B 107.9 . . ?
-C7 C6 C5 112.1(4) . . ?
-C7 C6 H6A 109.2 . . ?
-C5 C6 H6A 109.2 . . ?
-C7 C6 H6B 109.2 . . ?
-C5 C6 H6B 109.2 . . ?
-H6A C6 H6B 107.9 . . ?
-N1 C3 C4 110.3(4) . . ?
-N1 C3 H3A 109.6 . . ?
-C4 C3 H3A 109.6 . . ?
-N1 C3 H3B 109.6 . . ?
-C4 C3 H3B 109.6 . . ?
-H3A C3 H3B 108.1 . . ?
-N1 C7 C6 110.5(4) . . ?
-N1 C7 H7A 109.6 . . ?
-C6 C7 H7A 109.6 . . ?
-N1 C7 H7B 109.6 . . ?
-C6 C7 H7B 109.6 . . ?
-H7A C7 H7B 108.1 . . ?
-C2 S2 Cu1 104.03(18) . . ?
-O2 C2 C1 116.6(4) . . ?
-O2 C2 S2 124.3(4) . . ?
-C1 C2 S2 119.1(4) . . ?
-
-loop_
-_geom_torsion_atom_site_label_1
-_geom_torsion_atom_site_label_2
-_geom_torsion_atom_site_label_3
-_geom_torsion_atom_site_label_4
-_geom_torsion
-_geom_torsion_site_symmetry_1
-_geom_torsion_site_symmetry_2
-_geom_torsion_site_symmetry_3
-_geom_torsion_site_symmetry_4
-_geom_torsion_publ_flag
-S2 Cu1 S1 C1 161.09(19) 7_665 . . . ?
-S2 Cu1 S1 C1 -18.91(19) . . . . ?
-Cu1 S1 C1 O1 -160.1(4) . . . . ?
-Cu1 S1 C1 C2 21.5(4) . . . . ?
-O4 C8 C5 C6 -125.9(5) . . . . ?
-O3 C8 C5 C6 54.8(6) . . . . ?
-O4 C8 C5 C4 -1.2(7) . . . . ?
-O3 C8 C5 C4 179.4(4) . . . . ?
-C3 C4 C5 C8 -175.7(4) . . . . ?
-C3 C4 C5 C6 -51.8(5) . . . . ?
-C8 C5 C6 C7 176.4(4) . . . . ?
-C4 C5 C6 C7 50.8(5) . . . . ?
-C7 N1 C3 C4 -60.2(5) . . . . ?
-C5 C4 C3 N1 56.1(6) . . . . ?
-C3 N1 C7 C6 58.9(5) . . . . ?
-C5 C6 C7 N1 -53.9(6) . . . . ?
-S1 Cu1 S2 C2 -166.22(19) 7_665 . . . ?
-S1 Cu1 S2 C2 13.79(19) . . . . ?
-O1 C1 C2 O2 -12.2(7) . . . . ?
-S1 C1 C2 O2 166.3(4) . . . . ?
-O1 C1 C2 S2 169.2(4) . . . . ?
-S1 C1 C2 S2 -12.3(6) . . . . ?
-Cu1 S2 C2 O2 176.8(4) . . . . ?
-Cu1 S2 C2 C1 -4.6(4) . . . . ?
-
-_diffrn_measured_fraction_theta_max 1.000
-_diffrn_reflns_theta_full        25.00
-_diffrn_measured_fraction_theta_full 1.000
-_refine_diff_density_max         0.369
-_refine_diff_density_min         -0.409
-_refine_diff_density_rms         0.096
