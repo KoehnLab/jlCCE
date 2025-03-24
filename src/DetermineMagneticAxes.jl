@@ -16,8 +16,9 @@ Determine the magnetic axes based on the geometry of the spin center and the nea
 
 """
 function determine_mag_axes(system::SpinSystem)
-    #println("Determination of the magnetic axes")
-    #println("==================================\n")
+    println("")
+    println("Determination of the magnetic axes")
+    println("==================================\n")
     
     # identify spin center
     if system.spin_center == "V"
@@ -30,7 +31,7 @@ function determine_mag_axes(system::SpinSystem)
         print("Error currently only V, Cu and Pd \n")
         exit()
     end
-
+    
     # identify nuclear spin bath 
     if system.nuc_spin_bath == "H"
         atomic_number_nuclei = 1
@@ -44,7 +45,7 @@ function determine_mag_axes(system::SpinSystem)
         print("Error only proton/oxygen bath \n")
         exit()
     end
-    #print("Considered nuclear spins: ",system.nuc_spin_bath,"\n")
+    print("Considered nuclear spins: ",system.nuc_spin_bath,"\n")
 
     # call function get_spin_center: determine lattice and coordinates of the spin center
     lattice,coord_electron_spin = 
@@ -63,12 +64,12 @@ function determine_mag_axes(system::SpinSystem)
     
     println("Number of considered ligand atoms: ", n_ligand_atoms)
 
-    #print("\n")
-    #println("Coordinates of ligand atoms:")
+    print("\n")
+    println("Coordinates of ligand atoms:")
 
-    #for i in 1:n_ligand_atoms
-    #    println("O", i,": ", coordinates_distance_ligand_atoms[i]," Å")
-    #end
+    for i in 1:n_ligand_atoms
+        println("Ligand atom ", i,": ", coordinates_distance_ligand_atoms[i]," Å")
+    end
 
     #print("\n")
     #println("Magnetic axes will be determined based on these coordinates. \n")
