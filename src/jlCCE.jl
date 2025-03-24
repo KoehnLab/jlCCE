@@ -256,9 +256,14 @@ function cce(system::SpinSystem)
     # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
     gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
+    
+    println("")
+    println("Gryomagnetic ratio of the electron: ", gamma_electron)
+    println("Gryomagnetic ratio of the nuclei: ", gamma_n,"\n")
 
     # set time for the simulation
     time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
+    println("Time for the simulation: ",time_hahn_echo)
 
     if system.simulation_type == "highfield_analytic"
 
@@ -310,7 +315,9 @@ time_hahn_echo the time set for which the signal is to be computed
 the function returns the intensity for the given time set
 """
 function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
-
+    # debugging
+    println("\n cce_hf_analitic starts. \n")
+    
     n_time_step = size(time_hahn_echo)
 
     # precompute values of the hyperfine coupling constant A for electron nucleus pairs
@@ -353,10 +360,13 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
             r_nm_x_B0 = cross(r_nm, B0)
             r_nm_dot_B0 = dot(r_nm, B0)
             theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
-            b_nm = -0.25 * gamma_n^2 * hbar * (1 - 3 * cos(theta_nm)^2) / norm(r_nm)^3
-            c_nm = (A_n[n] - A_n[m]) / (4. * b_nm)
-            w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
-            if use_exp
+	    b_nm = -0.25 * gamma_n^2 * hbar * (1 - 3 * cos(theta_nm)^2) / norm(r_nm)^3
+            #println("b_nm: ", b_nm)
+	    c_nm = (A_n[n] - A_n[m]) / (4. * b_nm)
+            #println("c_nm: ", c_nm)
+	    w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
+            #println("w_nm: ",w_nm)
+	    if use_exp
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                     intensity[j] = intensity[j] * exp(v_nm)
@@ -365,6 +375,7 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                     intensity[j] = intensity[j] * (1 + v_nm)
+		    #println("Pair contribution & intensity: ",v_nm," ",intensity)
                 end
             end 
         end
