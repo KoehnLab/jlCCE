@@ -80,7 +80,15 @@ pairwise_distance_counts = countmap(round.(pairwise_distances, digits=2))
 println("Häufigkeiten der Abstände zum Elektronenspin: ", distance_counts)
 println("Häufigkeiten der Abstände zwischen Kernspins: ", pairwise_distance_counts)
 
-# (Optional) Ergebnisse speichern
-CSV.write("distance_counts_to_electron.csv", DataFrame(Distance=keys(distance_counts), Count=values(distance_counts)))
-CSV.write("pairwise_distance_counts.csv", DataFrame(Distance=keys(pairwise_distance_counts), Count=values(pairwise_distance_counts)))
+# Speichern der Häufigkeiten als CSV mit zwei Spalten
+df_electron = DataFrame(Distance=collect(keys(distance_counts)), Count=collect(values(distance_counts)))
+df_pairwise = DataFrame(Distance=collect(keys(pairwise_distance_counts)), Count=collect(values(pairwise_distance_counts)))
 
+CSV.write("distance_counts_to_electron.csv", df_electron)
+CSV.write("pairwise_distance_counts.csv", df_pairwise)
+
+# (Optional) Ergebnisse speichern
+#CSV.write("distance_counts_to_electron.csv", DataFrame(Distance=keys(distance_counts), Count=values(distance_counts)))
+#CSV.write("pairwise_distance_counts.csv", DataFrame(Distance=keys(pairwise_distance_counts), Count=values(pairwise_distance_counts)))
+
+#print("n nuc: ",n_nuc)
