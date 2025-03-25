@@ -23,6 +23,8 @@ function determine_mag_axes(system::SpinSystem)
     # identify spin center
     if system.spin_center == "V"
         atomic_number_metal = 23
+    elseif system.spin_center == "Ni"
+        atomic_number_metal = 28
     elseif system.spin_center == "Cu"
         atomic_number_metal = 29
     elseif system.spin_center == "Pd"
