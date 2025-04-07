@@ -259,13 +259,13 @@ function cce(system::SpinSystem)
     gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
     
-    println("")
-    println("Gryomagnetic ratio of the electron: ", gamma_electron)
-    println("Gryomagnetic ratio of the nuclei: ", gamma_n,"\n")
+    #println("")
+    #println("Gryomagnetic ratio of the electron: ", gamma_electron)
+    #println("Gryomagnetic ratio of the nuclei: ", gamma_n,"\n")
 
     # set time for the simulation
     time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
-    println("Time for the simulation: ",time_hahn_echo)
+    #println("Time for the simulation: ",time_hahn_echo)
 
     if system.simulation_type == "highfield_analytic"
 
@@ -318,7 +318,7 @@ the function returns the intensity for the given time set
 """
 function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
     # debugging
-    println("\n cce_hf_analitic starts. \n")
+    #println("\n cce_hf_analitic starts. \n")
     
     n_time_step = size(time_hahn_echo)
 
@@ -334,12 +334,18 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
         #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
     end
-    minA = minimum(abs.(A_n))
-    maxA = maximum(abs.(A_n))
-    print("\n")
-    print("Hyperfine coupling constants (min, max) in Hz: ",minA,"  ",maxA,"\n")
-    print("\n")
-    
+
+    # in case, there are no nuclear spin baths within the given r_max, do nothing --> return intensity of 1 for all time steps
+    if !isempty(A_n)
+        minA = minimum(abs.(A_n))
+        maxA = maximum(abs.(A_n))
+        print("\n")
+        print("Hyperfine coupling constants (min, max) in Hz: ",minA,"  ",maxA,"\n")
+        print("\n")
+    else 
+        nothing
+    end
+
     # not directly used below, but call this to report the screening
     n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
 
