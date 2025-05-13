@@ -155,7 +155,7 @@ end
 
 # run Lebedev integration depending on r,r12 - averaging of the magnetic field direction
 df = DataFrame(r=Float64[],r12=Float64[], averaged_modulation_depth=Float64[], averaged_nzq_frequency=Float64[], time_hahn_echo=String[], pair_contribution=String[])
-x,y,z,w = lebedev_by_order(23)
+x,y,z,w = lebedev_by_order(17)
 n_points = size(x)
 println("number of points: ", n_points)
 for k = 1:length(r)[1]
@@ -187,7 +187,7 @@ for k = 1:length(r)[1]
     end
 end
 
-CSV.write("lebedev_integration_B0_order_23.csv", df)
+CSV.write("results_lebedev_integration_B0_order_17.csv", df)
 
 
 
