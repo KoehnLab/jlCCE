@@ -204,11 +204,8 @@ function cce(system::SpinSystem)
     @printf " x  %20.6f Gauss\n" system.B0[1]
     @printf " y  %20.6f Gauss\n" system.B0[2]
     @printf " z  %20.6f Gauss\n\n" system.B0[3]
-    
-    # considering the anisotropy of the g factor --> determine an effective g factor
-    Bnorm = system.B0/norm(system.B0)
-    g_eff = Bnorm' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * Bnorm 
 
+    
     println("Magnetic axes:")
     @printf " x [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[2,1] system.magnetic_axes[3,1]
     @printf " y [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,2] system.magnetic_axes[2,2] system.magnetic_axes[3,2]
@@ -219,10 +216,18 @@ function cce(system::SpinSystem)
     @printf " y  %10.6f \n" system.g_factor[2]
     @printf " z  %10.6f \n\n" system.g_factor[3]
 
-    @printf "Determined effective g factor: %10.6f  (along magnetic field, relevant for high-field approximation)\n" g_eff
- 
-    # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
-    gamma_electron = g_eff .* (mu_b / hbar)
+    if system.simulation_type == "highfield_analytic"
+        # considering the anisotropy of the g factor --> determine an effective g factor
+        Bnorm = system.B0/norm(system.B0)
+        g_eff = Bnorm' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * Bnorm 
+
+        @printf "Determined effective g factor: %10.6f  (along magnetic field, relevant for high-field approximation)\n" g_eff
+        # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
+        gamma_electron_sc = g_eff .* (mu_b / hbar)
+    else
+        gamma_electron = system.g_factor .*  (mu_b / hbar)
+    end
+
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
 
     @printf " Nuclear g factor:             %10.6f \n\n" system.gn_spin_bath 
@@ -249,7 +254,7 @@ function cce(system::SpinSystem)
         end
 
         intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,
-                                    gamma_n,gamma_electron[1],time_hahn_echo,system)
+                                    gamma_n,gamma_electron_sc,time_hahn_echo,system)
         # dummies for iCCE1 and iCCE2
         iCCE1 = ones(size(time_hahn_echo))
         iCCE2 = intensity
@@ -257,10 +262,8 @@ function cce(system::SpinSystem)
         if system.report_pair_contrib
             error("pair contribution report only implemented for analytic model")
         end
-#        intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
- #            system.s_nuc,gamma_n,system.s_el,[gamma_electron, gamma_electron, gamma_electron],system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
         intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,
-             gamma_n,[gamma_electron, gamma_electron, gamma_electron],time_hahn_echo,system)
+                gamma_n,gamma_electron,time_hahn_echo,system)
     else
         print("Unkonwn simulation type: ",system.simulation_type,"\n")
         intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
@@ -413,13 +416,13 @@ NOTE: non isotropic electron moments are not yet debugged!
 """
 function hyperfine(gamma_ten,gamma_n,r)
 
-
     dist = norm(r)
     rn = r ./ dist
     fact = gamma_n*hbar / dist^3
     
     A = fact*(I(3) - 3 * rn*transpose(rn))
 
+    # assuming this form of the HFC:  S^+ A I
     At = transpose(gamma_ten) * A 
 
     return At 
@@ -461,12 +464,8 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,rho
         end
     end
 
-    #print_matrix("Hmat:",Hmat)
-
     # add magnetic contribution
     Hmat += Hmag
-
-    #print_matrix("Hmag:",Hmag)
 
     # Sx operator for spin (emulating ideal π pulse)
     sigmaX = kron(Smat[1],I1)*2
@@ -624,9 +623,10 @@ function get_rot_for_unit_vector(uvec)
     end
 
     # rotation around y by theta
-    yrot = [[costh,0.,sinth] [0.,1.,0.] [-sinth,0.,costh]]
+    yrot = [ costh 0. sinth ;  0.  1.  0.; -sinth  0.  costh]
+
     # rotation around z by -phi
-    zrot = [[cosphi,-sinphi,0.] [sinphi,cosphi,0.] [0.,0.,1.]]
+    zrot = [ cosphi  -sinphi  0. ; sinphi  cosphi  0.; 0.  0.  1. ]
 
     # total rotation matrix
     Rot = zrot * yrot
@@ -683,10 +683,10 @@ end
 function cce_exact(distance_coordinates_el_nucs,n_nuc,
     gamma_n,gamma_el,time_hahn_echo,system)
 
-    if ! is_unit(system.magnetic_axes,1e-8)
-        print("non unit magnetic axes not yet debugged!")
-        error("non unit magnetic axes not yet debugged!")
-    end
+#    if ! is_unit(system.magnetic_axes,1e-8)
+#        print("non unit magnetic axes not yet debugged!")
+#        error("non unit magnetic axes not yet debugged!")
+#    end
 
     r_max_bath = system.r_max_bath*aacm
     B00 = system.B0
@@ -704,14 +704,17 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     intensity_correction = ones(n_time_step)
 
     # Here, it is more convenient to keep the magnetic field at (0,0,1) and to
-    # transform the nuclear coordinates
+    # transform the nuclear coordinates.
+    # This is because the treatment uses the rotation wave approximation and
+    # uses the magnetic field as the main quantization axis z
     
     # field strength
     Bstrength = norm(B00)
 
     Rmat = get_rot_for_unit_vector(B00/Bstrength)
 
-    print("Found this field: ",B00,"\n")
+    @printf "Found this field: [ %12.6g %12.6g %12.6g ] G\n" B00[1] B00[2] B00[3]
+    @printf "Norm: %12.6g G\n\n" Bstrength
 
     print("Transforming by:\n")
     display(Rmat)
@@ -719,27 +722,29 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
     n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
 
-    print("Total number of pairs in bath: ",n_nuc*(n_nuc-1)÷2,"\n")
-    print("Screened number of CCE2 pairs: ",n_pairs,"\n")
-    print("Screening distance was: ",r_max_bath/aacm," Å\n")
+    @printf "Total number of pairs in bath: %12i\n" n_nuc*(n_nuc-1)÷2
+    @printf "Screened number of CCE2 pairs: %12i\n" n_pairs
+    @printf "Radius for spin bath was:      %12.2f Å\n" system.r_max
+    @printf "Pair screening distance was:   %12.2f Å\n\n" system.r_max_bath
 
     B0 = [0.,0.,Bstrength]
 
     # transform coordinates
     distance_el_nuc_traf = []
     for coord in distance_coordinates_el_nucs
-        coord_traf = transpose(Rmat) * coord
+        coord_traf = Rmat' * coord
         push!(distance_el_nuc_traf,coord_traf)
     end
-
-    mag_axes_t = transpose(Rmat) * mag_axes
 
     # "g tensor" from gamma and magnetic axes
     gamma_t = zeros(3,3)
     gamma_t[1,1] = gamma_el[1]; gamma_t[2,2] = gamma_el[2]; gamma_t[3,3] = gamma_el[3] 
-    gamma_t = mag_axes_t * gamma_t * transpose(mag_axes_t)
+    mag_axes_t = Rmat' * mag_axes
+    gamma_t = mag_axes_t * gamma_t * mag_axes_t'
 
-    print("gamma_t: ",gamma_t,"\n")
+    print("gamma_t: \n")
+    display(gamma_t)
+    print("\n")
 
     print("gamma_n: ",gamma_n,"\n")
     
@@ -790,15 +795,16 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         Mmat1 = []
         for i = 1:3
             mat = zeros(dimH1,dimH1)
-            # needs to be updated for non-isotropic g
-            mat += kron(Smat[i],I1).*gamma_t[i,i]
+            for j = 1:3
+                mat += kron(Smat[j],I1).*gamma_t[i,j]
+            end
             mat += kron(S1,Imat[i]).*gamma_n
             push!(Mmat1,mat)
         end
 
         # magnetic field contribution is universal
         Hmag1 = zeros(dimH1,dimH1)
-        B0t = gamma_t * B0
+        B0t = gamma_t' * B0
         for i = 1:3
             Hmag1 += kron(Smat[i],I1).*B0t[i]
             Hmag1 += kron(S1,Imat[i]).*(B0[i]*gamma_n)
@@ -828,8 +834,9 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     Mmat = []
     for i = 1:3
         mat = zeros(dimH,dimH)
-        # needs to be updated for non-isotropic g
-        mat += kron(Smat[i],kron(I1,I1)).*gamma_t[i,i]
+        for j = 1:3
+           mat += kron(Smat[j],kron(I1,I1)).*gamma_t[i,j]
+        end
         mat += kron(S1,kron(Imat[i],I1)).*gamma_n
         mat += kron(S1,kron(I1,Imat[i])).*gamma_n
         push!(Mmat,mat)
@@ -837,7 +844,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
     # magnetic field contribution is universal
     Hmag = zeros(dimH,dimH)
-    B0t = gamma_t * B0
+    B0t = gamma_t' * B0
     for i = 1:3
         Hmag += kron(Smat[i],kron(I1,I1)).*B0t[i]
         Hmag += kron(S1,kron(Imat[i],I1)).*(B0[i]*gamma_n)
@@ -866,11 +873,11 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
     else
 
-        print("entered threaded route")
+        print("entered threaded route\n")
         
         # block the pair list among the threads
         blocks = Iterators.partition(1:n_pairs, n_pairs ÷ Threads.nthreads())
-        print(blocks,"\n")
+        #print(blocks,"\n")
         tasks = map(blocks) do block
 
             Threads.@spawn begin
