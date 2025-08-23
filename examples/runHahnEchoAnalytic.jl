@@ -1,57 +1,53 @@
 push!(LOAD_PATH,"../src")
 
 using jlCCE
+using jlCCEtools
+using DetermineMagneticAxes
+using RotationMatrices
 using Tables, CSV
 using BenchmarkTools
 
-# set system - use the simple constructor
-spinsystem = SpinSystem("pddbm2.pdb","Pd",1)  # <--- note: put this file into the folder
-#spinsystem = SpinSystem("pddbm2.cif","Pd",1)  # <--- note: put this file into the folder
+# determine magnetic axes from geometry
+spinsystem = SpinSystem("cudbm2.pdb","Pd",1)
 
-# modify the values (SpinSystem creates a mutable object):
-spinsystem.g_factor = [1.9846,1.9846,1.9846]  # isotropic here
-# pddbm2: g = 2.25
-# vmnt3: 1.9846,1.9846,1.9846
+R_m = determine_mag_axes(spinsystem,["O"],3.0)
 
+# define the magnetic field
+B0 = [1., 0., 0.]
+theta = 0.
+phi = 0.
+rot_mat = rotate_solid(deg2rad(theta),deg2rad(phi))
+spinsystem.B0 = R_m * (rot_mat * B0)
+#println("B0: ",spinsystem.B0)
 
-
-# defaults, no need to define here
-#voacac2.magnetic_axes = [1.0 0.0 0.0 ; 0.0 1.0 0.0 ; 0.0 0.0 1.0]
-#voacac2.nuc_spin_bath = "H"
-#voacac2.gn_spin_bath = 5.58569468
-spinsystem.B0 = [0.,0.,.1]*10000 # 10 kGaus = 1 Tesla
+# define the spinsystem for thr run of the simulation
+spinsystem.magnetic_axes = R_m
+spinsystem.s_el = 0.5
+spinsystem.g_factor = [2.0837,2.0200,2.0200]
+spinsystem.r_max = 35.0					 
 spinsystem.r_min = 0.
-#r_max = range(4.5,35.5,length=150) # AA
-r_max = range(4.5,5.5,length=150) # AA
-spinsystem.r_max_bath = 10.
+spinsystem.r_max_bath = 15.
 spinsystem.t_min = 0.
-spinsystem.t_max = 1e-4 # s
-spinsystem.n_time_step = 201
-
+spinsystem.t_max = 15e-6 # s
+spinsystem.n_time_step = 11
+spinsystem.use_exp = false
+spinsystem.simulation_type="highfield_analytic"
+spinsystem.report_pair_contrib = false
+spinsystem.pair_log_file = "pair_log.txt"
 
 # run
-#intensity = zeros(20,size(r_max)[1])
-#for i in 1:size(r_max)[1]
-    spinsystem.r_max = 20.0 #r_max[i]
-    print("r_max: ",r_max,"\n")
-    times,intensity = cce(spinsystem)
-    spinsystem.use_exp = false
-    times,intensityNE = cce(spinsystem)
-    spinsystem.simulation_type="exact"
-    times,intensityEX,iCCE1,iCCE2 = cce(spinsystem)
-    #print("\n")
-    #print("Simulated intensity: ",intensity,"\n")
-    #print("\n")
-#end
-
-
-CSV.write("echo.csv", Tables.table([times intensity intensityNE intensityEX iCCE1 iCCE2]))
+# run CCE - determine the Hahn echo intensity
+times,intensity = cce(spinsystem)
+print("\n")
+print("Simulation times:    ",times,"\n")
+print("Simulated intensity: ",intensity,"\n")
+print("\n")
+# determine the coherence time Tm
+Tm = 2*get_decay_time(times,intensity)*10^6
+println("Simulated coherence time: ",Tm,"\n")
 
 
 
-#print("\n")
-#print("Our great result:\n")
-#print("time of the Hahn echo: ",time_hahn_echo,"\n")
-#print("Simulated intensity: ",intensity,"\n")
-#print("\n")
+#CSV.write("echo.csv", Tables.table([times intensity intensityNE intensityEX iCCE1 iCCE2]))
+
 

@@ -10,7 +10,6 @@ using LinearAlgebra
 using Printf
 
 # import the readCIF.jl file to read cif files 
-#   --> export: distance_coordinates_el_nucs, n_nuc
 using readCIF
 using SpinBase
 
@@ -32,6 +31,8 @@ mutable struct SpinSystem
     spin_center::String
     # index within unit cell to select spin center, if name is not unique
     spin_center_index::Int
+    # nuclei defining spin bath ("H", etc.)
+    nuc_spin_bath::String
     # type of simulation
     simulation_type::String
     use_exp::Bool
@@ -42,8 +43,6 @@ mutable struct SpinSystem
     g_factor::Vector{Float64}
     # magnetic axes of spin center (column vectors for x, y, z direction)
     magnetic_axes::Matrix{Float64}
-    # nuclei defining spin bath ("H", etc.)
-    nuc_spin_bath::String
     # spin quantum number of nuclei
     s_nuc::Float64
     # corresponding nuclear g factor
@@ -61,15 +60,25 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
+    report_pair_contrib::Bool
+    pair_log_file::String
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
 SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
-    coord_file,spin_center,spin_center_index,
+    coord_file,spin_center,spin_center_index,"H",
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
-    "H",0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25)
+    0.5,5.58569468,
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,"")
+
+SpinSystem(coord_file,spin_center,spin_center_index,nuc_spin_bath) = SpinSystem(
+    coord_file,spin_center,spin_center_index,nuc_spin_bath,
+    "highfield_analytic",false,true,
+    0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
+    0.5,5.58569468,
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,"")
+
 
 """
     cce(system::SpinSystem)
@@ -94,24 +103,16 @@ function cce(system::SpinSystem)
     println("=============\n")
 
     println("Running on ",Threads.nthreads()," threads\n")
-
-    if system.coord_file != "test"
+ 
+    if system.coord_file != "test" && system.coord_file != "test_rotated"
         # check cif file
         print("Coordinates will be read from: ",system.coord_file,"\n")
 
         # identify spin center
-        if system.spin_center == "V"
-            atomic_number_metal = 23
-        elseif system.spin_center == "Cu"
-            atomic_number_metal = 29
-        elseif system.spin_center == "Pd"
-            atomic_number_metal = 46
-        else 
-            print("Error currently only V, Cu and Pd \n")
-            exit()
-        end 
+
+        atomic_number_metal = symbol_to_atomic_number(system.spin_center)
         print("\n")
-        print("Current metal of the spin center: ",system.spin_center,"\n")
+        print("Atom symbol for selecting spin center: ",system.spin_center,"\n")
 
         # identify nuclear spin bath 
         if system.nuc_spin_bath == "H"
@@ -120,16 +121,18 @@ function cce(system::SpinSystem)
             print("Error only proton bath \n")
             exit()
         end
-        print("Considered nuclear spins of the spin bath: ",system.nuc_spin_bath,"\n")
-        print("\n")
+        print("Atom symbols for selecting spin bath: ",system.nuc_spin_bath,"\n")
 
         # get list of spin bath nuclei using the module readCIF
 
         # call function get_coordinates: determine lattice of the spin system, the coordinates of the 
-            # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
-        lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = 
-            get_coordinates(system.coord_file,atomic_number_metal,system.spin_center_index,atomic_number_nuclei)
-
+        # electron spin center (x,y,z) and coordinates of the nuclear spins of the unit cell     
+        lattice,coord_electron_spin = 
+            get_spin_center(system.coord_file,atomic_number_metal,system.spin_center_index)
+        
+        coords_nuclear_spins_unit_cell = 
+            get_coordinates_nuclear_spins(system.coord_file,atomic_number_nuclei)
+        
         println("\n")
         println("lattice vectors:")
         @printf " a = [%20.6f %20.6f  %20.6f]\n" lattice[1][1] lattice[1][2] lattice[1][3]
@@ -153,19 +156,50 @@ function cce(system::SpinSystem)
 
         # call function get_bath_list: determine the distance coordinates between the electron spin center
         # and the nuclear spins and the number of considered nuclear spins in the spin bath
-        distance_coordinates_el_nucs,n_nuc = 
+        distance_coordinates_el_nucs,n_nuc= 
             get_bath_list(system.r_min,system.r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
-    
-    else   # test
-        #n_nuc = 5
-        distance_coordinates_el_nucs = []
+            
+	    
+    else   # system.coords_file = test
+    	println("Entered test mode")
 
-        println("Entered test mode")
+    	if system.coord_file == "test"
 
-        # test - keep these (used for test suite)
-        n_nuc = 2
-        push!(distance_coordinates_el_nucs,[20.,0.,0.])
-        push!(distance_coordinates_el_nucs,[23.,0.,0.])
+            distance_coordinates_el_nucs = []
+
+            # test - keep these (used for test suite)
+            n_nuc = 2
+
+	        I1 = [20.,0.,0.]
+            I2 = [23.,0.,0.]
+	
+	        push!(distance_coordinates_el_nucs,I1)
+            push!(distance_coordinates_el_nucs,I2)
+
+	    elseif system.coord_file == "test_rotated" 
+
+            # rotate the system
+            #println("\n Investigation of rotated test system")
+	   
+	        distance_coordinates_el_nucs = []
+            
+	        n_nuc = 2
+
+	        theta = 90
+	        phi = 0
+
+	        rot_mat_y = [cos(theta) 0 sin(theta); 0 1 0; -sin(theta) 0 cos(theta)]
+	        rot_mat_z = [cos(phi) -sin(phi) 0; sin(phi) cos(phi) 0; 0 0 1]
+	
+	        I1 = [20.,0.,0.]
+            I2 = [23.,0.,0.]
+
+	        I1_rot = rot_mat_z * (rot_mat_y*I1)
+	        I2_rot = rot_mat_z * (rot_mat_y*I2)
+
+            push!(distance_coordinates_el_nucs,I1_rot)
+            push!(distance_coordinates_el_nucs,I2_rot)
+	    end
     end
 
     println("Number of bath nuclei: ",n_nuc,"\n")   
@@ -173,19 +207,32 @@ function cce(system::SpinSystem)
     # rescale distance coordinates from AA to cm (cgs unit system)
     distance_coordinates_el_nucs = distance_coordinates_el_nucs .* aacm
 
-    #print("Distance coordinates between the electron spin center and the nuclear spins: \n")
-    #print(distance_coordinates_el_nucs,"\n") 
-
     println("Applied magnetic field:")
-    @printf " x  %20.1f Gauss\n" system.B0[1]
-    @printf " y  %20.1f Gauss\n" system.B0[2]
-    @printf " z  %20.1f Gauss\n\n" system.B0[3]
-
-    #print_matrix("Distances: ",distance_coordinates_el_nucs)
+    @printf " x  %20.6f Gauss\n" system.B0[1]
+    @printf " y  %20.6f Gauss\n" system.B0[2]
+    @printf " z  %20.6f Gauss\n\n" system.B0[3]
     
-    # calculation of the gryomagnetic ratios of the central electron spin center and the nuclear spins of the spin bath
-    gamma_electron = system.g_factor .* (mu_b / hbar)
+    # considering the anisotropy of the g factor --> determine an effective g factor
+    Bnorm = system.B0/norm(system.B0)
+    g_eff = Bnorm' * system.magnetic_axes * diagm(system.g_factor) * system.magnetic_axes' * Bnorm 
+
+    println("Magnetic axes:")
+    @printf " x [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,1] system.magnetic_axes[2,1] system.magnetic_axes[3,1]
+    @printf " y [%10.6f %10.6f %10.6f] Å\n" system.magnetic_axes[1,2] system.magnetic_axes[2,2] system.magnetic_axes[3,2]
+    @printf " z [%10.6f %10.6f %10.6f] Å\n\n" system.magnetic_axes[1,3] system.magnetic_axes[2,3] system.magnetic_axes[3,3]
+
+    println("g factor: ")
+    @printf " x  %10.6f \n" system.g_factor[1]
+    @printf " y  %10.6f \n" system.g_factor[2]
+    @printf " z  %10.6f \n\n" system.g_factor[3]
+
+    @printf "Determined effective g factor: %10.6f  (along magnetic field, relevant for high-field approximation)" g_eff
+ 
+    # calculation of the gryomagnetic ratios of the central electron spin center and the nucle ar spins of the spin bath
+    gamma_electron = g_eff .* (mu_b / hbar)
     gamma_n = (system.gn_spin_bath * mu_n) / hbar
+
+    @printf " Nuclear g factor: %10.6f \n\n" system.gn_spin_bath 
 
     # set time for the simulation
     time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
@@ -204,22 +251,22 @@ function cce(system::SpinSystem)
             print("   Found: B0 = ",system.B0,"\n")
             err = true
         end
-        if system.g_factor[1] != system.g_factor[2] || system.g_factor[1] != system.g_factor[3]
-            print("Error: Analytic approach only for isotropic spin\n")
-            print("    Found: g_factor = ",system.g_factor,"\n")
-            err = true
-        end
         if err
             error("Unsuitable settings found (see above)")
         end
 
-        intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp)
+        intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
+                                    gamma_n,gamma_electron[1],system.B0,time_hahn_echo,system.use_exp,
+                                    system.report_pair_contrib,system.pair_log_file)
         # dummies for iCCE1 and iCCE2
         iCCE1 = ones(size(time_hahn_echo))
         iCCE2 = intensity
     elseif system.simulation_type == "exact"
+        if system.report_pair_contrib
+            error("pair contribution report only implemented for analytic model")
+        end
         intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,system.r_max_bath*aacm,
-             system.s_nuc,gamma_n,system.s_el,gamma_electron,system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
+             system.s_nuc,gamma_n,system.s_el,[gamma_electron, gamma_electron, gamma_electron],system.magnetic_axes,system.B0,system.do_cce1,time_hahn_echo)
     else
         print("Unkonwn simulation type: ",system.simulation_type,"\n")
         intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
@@ -239,8 +286,12 @@ time_hahn_echo the time set for which the signal is to be computed
 
 the function returns the intensity for the given time set
 """
-function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,gamma_electron,B0,time_hahn_echo,use_exp)
-
+function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,
+                         gamma_n,gamma_electron,B0,time_hahn_echo,use_exp,
+                         report_pair_contrib,pair_log_file)
+    # debugging
+    #println("\n cce_hf_analitic starts. \n")
+    
     n_time_step = size(time_hahn_echo)
 
     # precompute values of the hyperfine coupling constant A for electron nucleus pairs
@@ -255,18 +306,32 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
         #print(gamma_n,gamma_electron,hbar,theta_i,r_i_norm)
         A_n[i] = -gamma_n * gamma_electron * hbar * (1 - 3 * cos(theta_i)^2) / r_i_norm^3
     end
-    minA = minimum(abs.(A_n))
-    maxA = maximum(abs.(A_n))
-    print("\n")
-    print("Hyperfine coupling constants (min, max) in Hz: ",minA,"  ",maxA,"\n")
-    print("\n")
-    
+
+    # in case, there are no nuclear spin baths within the given r_max, do nothing --> return intensity of 1 for all time steps
+    if !isempty(A_n)
+        minA = minimum(abs.(A_n))
+        maxA = maximum(abs.(A_n))
+        print("\n")
+        @printf "Hyperfine coupling constants (min, max) in Hz: %12.4g %12.4g\n\n" minA maxA
+    else 
+        nothing
+    end
+
     # not directly used below, but call this to report the screening
     n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
 
-    print("Total number of pairs in bath: ",n_nuc*(n_nuc-1)÷2,"\n")
-    print("Screened number of pairs:      ",n_pairs,"\n")
-    print("Screening distance was: ",r_max_bath/aacm," Å\n\n")
+    @printf "Total number of pairs in bath: %12i\n" n_nuc*(n_nuc-1)÷2
+    @printf "Screened number of pairs:      %12i\n" n_pairs
+    #@printf "Radius for spin bath was:      %12.2f Å\n\n" r_max/aacm  # currently not available for print out here
+    @printf "Screening distance was:        %12.2f Å\n\n" r_max_bath/aacm
+
+    flush(stdout)
+
+    if report_pair_contrib
+        print("Writing out pair contributions to: ",pair_log_file,"\n\n")
+        flush(stdout)
+        plf = open(pair_log_file,"w")
+    end
 
     # initialize Intensity to 1. for all times
     intensity = ones(n_time_step)
@@ -283,10 +348,19 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
             r_nm_x_B0 = cross(r_nm, B0)
             r_nm_dot_B0 = dot(r_nm, B0)
             theta_nm = atan(norm(r_nm_x_B0), r_nm_dot_B0)
-            b_nm = -0.25 * gamma_n^2 * hbar * (1 - 3 * cos(theta_nm)^2) / norm(r_nm)^3
-            c_nm = (A_n[n] - A_n[m]) / (4. * b_nm)
-            w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
-            if use_exp
+	        b_nm = -0.25 * gamma_n^2 * hbar * (1 - 3 * cos(theta_nm)^2) / norm(r_nm)^3
+            #println("b_nm: ", b_nm)
+	        c_nm = (A_n[n] - A_n[m]) / (4. * b_nm)
+            #println("c_nm: ", c_nm)
+	        w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
+            #println("w_nm: ",w_nm)
+            if report_pair_contrib
+                r_cent = 0.5*(distance_coordinates_el_nucs[m] + distance_coordinates_el_nucs[n])
+                Lam = 4.0*((c_nm^2) / (1 + c_nm^2)^2)
+                @printf(plf,"%18.6f %18.6f %20.10g %20.10g",norm(r_cent)/aacm,norm(r_nm)/aacm,Lam,abs(w_nm))
+            end
+            
+	        if use_exp
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                     intensity[j] = intensity[j] * exp(v_nm)
@@ -295,11 +369,23 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                     intensity[j] = intensity[j] * (1 + v_nm)
+                    if report_pair_contrib
+                        @printf(plf," %20.10g",(1 + v_nm))
+                    end
+		    #println("Pair contribution & intensity: ",v_nm," ",intensity)
                 end
+            end
+
+            if report_pair_contrib
+                write(plf,"\n")
             end 
         end
     end        
      
+    if report_pair_contrib
+        close(plf)
+    end
+
     return intensity
 end
 
@@ -556,6 +642,13 @@ function make_pair_list(distance_coordinates_el_nucs,r_max_bath)
             r12 = distance_coordinates_el_nucs[i] - distance_coordinates_el_nucs[j]
             if norm(r12) > r_max_bath
                 continue
+            end
+            if norm(r12) < 0.5*aacm
+                @printf "WARNING: Pair %4i %4i has r = %10.4f AA \n" i j norm(r12)/aacm
+            end
+            if norm(r12) < 0.1*aacm
+                println("This must be wrong!")
+                error("Nonsensical spin bath coordinates!")
             end
 
             n_pairs += 1

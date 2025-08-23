@@ -1,10 +1,79 @@
 module readCIF
 
-export get_coordinates, set_supercell_list, get_bath_list
+export get_spin_center, get_coordinates_nuclear_spins, get_coordinates, set_supercell_list, get_bath_list, get_list_ligand_atoms, symbol_to_atomic_number
 
 using AtomsIO
 using LinearAlgebra
 using Unitful
+#using AtomsBase
+
+
+"""
+    get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::Int)
+
+extract the relevant information from the CIF 
+
+input: cif_file - name of the file
+       atomic_number_metal - atomic number describing the metal center
+       idx_metal  -  counter to select among several metal centers in the unit cell
+
+returns: lattice - lattice vectors of the crystal
+        coord_metal_atom - coordinates of the spin center (metal atom)
+
+""" 
+function get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::Int)
+    # extract relevant information from CIF
+    system = load_system(cif_file)
+
+    # coordinates in unit cell and translation vectors (lattice)
+    coords_atoms_unit_cell = ustrip.(position(system))
+    lattice = ustrip.(system.bounding_box)
+
+    # atomic numbers for identifying spin centers
+    atomic_n = atomic_number(system)
+
+    # get the coordinates of the spin center on the metal atom
+    idx_list = findall(x -> x==atomic_number_metal,atomic_n)
+    if idx_metal > size(idx_list)[1]
+        println("requested index: ", idx_metal)
+        println("number of such centers in unit cell: ", size(idx_list))
+        error("requested index for selecting spin center is too large")
+    end
+    idx_metal_atom = idx_list[idx_metal]
+    coord_electron_spin = coords_atoms_unit_cell[idx_metal_atom]
+
+    return lattice,coord_electron_spin
+end
+
+
+"""
+    get_coordinates_nuclear_spins(cif_file::String,atomic_number_ligand_atoms::Int)
+
+extract the coordinates of nuclear spins in the spin bath
+
+input: cif_file - name of the file
+       atomic_number_nuclei - atomic number describing the nuclei of the spin bath
+                                                                    
+returns: coords_nuclear_spins_unit_cell - coordinates of nuclear spins in the bath 
+
+"""
+function get_coordinates_nuclear_spins(cif_file::String,atomic_number_nuclei::Int)
+    # extract relevant information from CIF
+    system = load_system(cif_file)
+
+    # coordinates in unit cell and translation vectors (lattice)
+    coords_atoms_unit_cell = ustrip.(position(system))
+
+    # atomic numbers for identifying spin centers
+    atomic_n = atomic_number(system)
+
+    # get the coordinates of all bath spins
+    idx_nuclei = findall(x -> x==atomic_number_nuclei,atomic_n)
+    coords_nuclear_spins_unit_cell = coords_atoms_unit_cell[idx_nuclei]
+
+    return coords_nuclear_spins_unit_cell
+end
+
 
 """
     get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::Int,atomic_number_nuclei::Int)
@@ -25,7 +94,7 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     # extract relevant information from CIF
     system = load_system(cif_file)
     #print("cif file:",cif_file,"\n")
-    print("System: ",system,"\n")
+    #print("System: ",system,"\n")
 
     # coordinates in unit cell and translation vectors (lattice)
     coords_atoms_unit_cell = ustrip.(position(system))
@@ -53,6 +122,37 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
 
     return lattice,coord_electron_spin,coords_nuclear_spins_unit_cell
 end
+
+
+#"""
+#    get_coordinates_ligand_atoms(cif_file::String,atomic_number_ligand_atoms::Int)
+
+#extract the coordinates of specific ligand atoms
+
+#input: cif_file - name of the file
+#       atomic_number_ligand_atoms - atomic number describing the atom of the ligand
+                                                                    
+
+#returns: coords_ligand_atoms_unit_cell - coordinates of the specific ligand atoms 
+
+#"""
+#function get_coordinates_ligand_atoms(cif_file::String,atomic_number_ligand_atom::Int)
+    # extract relevant information from CIF
+#    system = load_system(cif_file)
+
+    # coordinates in unit cell and translation vectors (lattice)
+#    coords_atoms_unit_cell = ustrip.(position(system))
+
+    # atomic numbers for identifying spin centers
+#    atomic_n = atomic_number(system)
+
+    # get the coordinates of specific ligand atoms within the unit cell --> to determine the magnetic axes
+#    idx_ligand_atoms = findall(x -> x==atomic_number_ligand_atom,atomic_n)
+#    coords_ligand_atoms_unit_cell = coords_atoms_unit_cell[idx_ligand_atoms]
+
+#    return coords_ligand_atoms_unit_cell
+#end
+
 
 """
     set_supercell_list(r_max,lattice)
@@ -112,6 +212,7 @@ end
 #    return supercell
 # end
 
+
 """
     get_bath_list(r_min,r_max,lattice,coords_spins_unit_cell,coord_spin_center)
 
@@ -120,15 +221,13 @@ and another list with their (absolute) coordinates to later compute their
 relative positions
 
 """
-function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_cell,coord_spin_center)
-
+function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_nuclear_spins_unit_cell,coord_spin_center)
     # call set_supercell_list here (as we only need it here)
     cell_list = set_supercell_list(r_max,lattice)
 
     # initialize outputs lists for spin bath
-    #coordinates_nuclear_spins = Vector{}[]
-    distance_coordinates_el_nucs = Vector{}[]
-    #distance_coordinates_nuc_nuc = Vector{}[]
+    coordinates_nuclear_spins = Vector{}[]
+
     n_nuc = 0
 
     # loop over cell list
@@ -137,54 +236,111 @@ function get_bath_list(r_min::Float64,r_max::Float64,lattice,coords_spins_unit_c
         shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
     
         # calculate the (shifted) coordinates of all bath nuclei and their distances to the spin center
-        for Aidx in eachindex(coords_spins_unit_cell)
+        for Aidx in eachindex(coords_nuclear_spins_unit_cell)
             # coordinates of the shifted nuclear spins
-            coords_nuclear_spins = coords_spins_unit_cell[Aidx] + shift 
+            coords_shifted_nuclear_spins = coords_nuclear_spins_unit_cell[Aidx] + shift 
             # substract the coordinates of the spin center to obtain the distance coordinates of the bath nuclei from the spin center
-            distance_coords_el_nucs = coords_nuclear_spins - coord_spin_center
+            coords_distance_nuclear_spins = coords_shifted_nuclear_spins - coord_spin_center
             # distances of the bath nuclei to the spin center
-            distance_el_nucs = norm(distance_coords_el_nucs) 
+            distance_el_nucs = norm(coords_distance_nuclear_spins) 
          
             # restricted 
-            if distance_el_nucs > r_min && distance_el_nucs <= r_max
-                #push!(coordinates_nuclear_spins,coords_nuclear_spins) 
-                push!(distance_coordinates_el_nucs, distance_coords_el_nucs)
+            if distance_el_nucs > r_min && distance_el_nucs <= r_max 
+                push!(coordinates_nuclear_spins, coords_distance_nuclear_spins)
                 n_nuc = n_nuc+1 
             end
         end
-        
-    end
-    return distance_coordinates_el_nucs,n_nuc
+	end 
 
+    return coordinates_nuclear_spins,n_nuc        
 end
    
-# quick testing - remove or comment out before using as module
-#cif_file = "/home/suchaneck/masterarbeit/cif_files/vopc.cif"
-#atomic_number_metal = 23
-#atomic_number_nuclei = 1
-#r_min = 0.0
-#r_max = 10.0
 
-#lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = get_coordinates(cif_file,atomic_number_metal,atomic_number_nuclei)
+"""
+    get_list_ligand_atoms(r_max,lattice,coord_spin_center,r_max_ligand_atoms)
 
-#cell_list = set_supercell_list(r_max,lattice)
+get a list of specific ligand atoms with their distances from the spin center 
+and another list with their (absolue) coordinates to later compute their
+relative positions
 
-#print("cell_list:\n")
-#print(cell_list)
-#print("\n")
+"""
+function get_list_ligand_atoms(r_max_ligand_atoms::Float64,lattice,coords_ligand_atoms_unit_cell,coord_spin_center)
+    # call set_supercell_list here (as we only need it here)
+    cell_list = set_supercell_list(r_max_ligand_atoms,lattice)
+ 
+    # initialize outputs lists for the ligand atoms
+    distance_coordinates_ligand_atoms = Vector{}[]
 
-#supercell = build_supercell(cell_list,lattice,coords_nuclear_spins_unit_cell)
+    for Tidx in eachindex(cell_list)
+    # construct the shift vector for this cell
+    shift = cell_list[Tidx][1]*lattice[1] + cell_list[Tidx][2]*lattice[2] + cell_list[Tidx][3]*lattice[3]
+    # calculate the (shifted) coordinates of all oxygen and their distances to the electron spin center for Aidx in eachindex(coords_oxygen_unit_cell)
+        for Aidx in eachindex(coords_ligand_atoms_unit_cell)
+            # coordinates of oxygen atoms in the crystal structure
+            coords_ligand_atoms = coords_ligand_atoms_unit_cell[Aidx] + shift  
+            distance_coords_ligand_atoms = coords_ligand_atoms - coord_spin_center
+            distance_el_ligand_atoms = norm(distance_coords_ligand_atoms)
 
-#print("supercell:\n")
-#print(supercell)
-#print("\n")
+            # restricted oxygens (nearest oxygen around the electron spin) 
+            if distance_el_ligand_atoms <= r_max_ligand_atoms
+            push!(distance_coordinates_ligand_atoms,distance_coords_ligand_atoms) 
+            end 
+        end
+    end
 
-#coordinates_nuclear_spins,distance_coordinates_el_nucs = get_bath_list(r_min,r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
+    return distance_coordinates_ligand_atoms
+end
 
-#print("coordinates of the nuclear spins of the bath: \n")
-#print(coordinates_nuclear_spins)
 
-#print("distance coordinates between the spin center and nuclear bath spins: \n")
-#print(distance_coordinates_el_nucs)
+# A little helper routine to get the atomic number for each symbols
+# courtesy of chatGPT :)
+# Map of chemical symbol (lowercase) → atomic number
+const SYMBOL_TO_Z = Dict{String,Int}(
+    "h"=>1,  "he"=>2,
+    "li"=>3, "be"=>4, "b"=>5,  "c"=>6,  "n"=>7,  "o"=>8,  "f"=>9,  "ne"=>10,
+    "na"=>11,"mg"=>12,"al"=>13,"si"=>14,"p"=>15, "s"=>16, "cl"=>17,"ar"=>18,
+    "k"=>19, "ca"=>20,"sc"=>21,"ti"=>22,"v"=>23, "cr"=>24,"mn"=>25,"fe"=>26,
+    "co"=>27,"ni"=>28,"cu"=>29,"zn"=>30,"ga"=>31,"ge"=>32,"as"=>33,"se"=>34,
+    "br"=>35,"kr"=>36,"rb"=>37,"sr"=>38,"y"=>39, "zr"=>40,"nb"=>41,"mo"=>42,
+    "tc"=>43,"ru"=>44,"rh"=>45,"pd"=>46,"ag"=>47,"cd"=>48,"in"=>49,"sn"=>50,
+    "sb"=>51,"te"=>52,"i"=>53, "xe"=>54,"cs"=>55,"ba"=>56,"la"=>57,"ce"=>58,
+    "pr"=>59,"nd"=>60,"pm"=>61,"sm"=>62,"eu"=>63,"gd"=>64,"tb"=>65,"dy"=>66,
+    "ho"=>67,"er"=>68,"tm"=>69,"yb"=>70,"lu"=>71,"hf"=>72,"ta"=>73,"w"=>74,
+    "re"=>75,"os"=>76,"ir"=>77,"pt"=>78,"au"=>79,"hg"=>80,"tl"=>81,"pb"=>82,
+    "bi"=>83,"po"=>84,"at"=>85,"rn"=>86,"fr"=>87,"ra"=>88,"ac"=>89,"th"=>90,
+    "pa"=>91,"u"=>92, "np"=>93,"pu"=>94,"am"=>95,"cm"=>96,"bk"=>97,"cf"=>98,
+    "es"=>99,"fm"=>100,"md"=>101,"no"=>102,"lr"=>103,"rf"=>104,"db"=>105,
+    "sg"=>106,"bh"=>107,"hs"=>108,"mt"=>109,"ds"=>110,"rg"=>111,"cn"=>112,
+    "nh"=>113,"fl"=>114,"mc"=>115,"lv"=>116,"ts"=>117,"og"=>118
+)
+
+"""
+    symbol_to_atomic_number(symbol::AbstractString; missing=:error)
+
+Return the atomic number for a chemical symbol (case-insensitive).
+
+- If the symbol is unknown:
+  - `missing = :error` (default) throws an `ArgumentError`.
+  - `missing = :nothing` returns `nothing`.
+  - `missing = some_value` returns `some_value`.
+
+# Examples
+julia> symbol_to_atomic_number("He")
+2
+
+julia> symbol_to_atomic_number("au")
+79
+
+julia> symbol_to_atomic_number("Xx"; missing = :nothing)
+nothing
+"""
+function symbol_to_atomic_number(symbol::AbstractString; missing=:error)
+    key = lowercase(strip(symbol))
+    z = get(SYMBOL_TO_Z, key, nothing)
+    z === nothing || return z
+    missing === :error && throw(ArgumentError("Unknown chemical symbol: $symbol"))
+    return missing === :nothing ? nothing : missing
+end
+
 
 end
