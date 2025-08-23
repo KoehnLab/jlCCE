@@ -5,6 +5,7 @@ using jlCCEtools
 using SpinBase
 using readCIF
 using RotationMatrices
+using DetermineMagneticAxes
 using Test, LinearAlgebra
 
 
@@ -129,6 +130,36 @@ end
     times,intensityX = cce(spinsystem)
 
     @test intensityA ≈ intensityX atol=1e-6
+
+end
+
+@testset "jlCCE integration test 3" begin
+
+    spinsystem = SpinSystem("cudbm2.pdb","Pd",1)
+    R_m = determine_mag_axes(spinsystem,["O"],3.0)
+    B0 = [0., 0., 1.]
+    theta = 90.
+    phi = 0.
+    rot_mat = rotate_solid(deg2rad(theta),deg2rad(phi))
+    spinsystem.B0 = R_m * (rot_mat * B0)
+    spinsystem.magnetic_axes = R_m
+    spinsystem.g_factor = [2.0837,2.0200,2.0200]
+    spinsystem.r_max = 35.0					 
+    spinsystem.r_min = 0.
+    spinsystem.r_max_bath = 15.
+    spinsystem.t_min = 0.
+    spinsystem.t_max = 15e-6 # s
+    spinsystem.n_time_step = 11
+    spinsystem.use_exp = false
+    spinsystem.simulation_type="highfield_analytic"
+
+    times,intensityX = cce(spinsystem)
+
+    intensity = [1.0, 0.9579864243644796, 0.7353763947293402, 0.37554803148750365, 
+                     0.12300781789402895, 0.023773492280595658, 0.002107878140376796, 
+                    7.457678786919866e-5, 9.633230394517648e-7, 4.137562584300945e-9, 5.582498831077837e-12]
+    
+    @test intensityX ≈ intensity rtol=1e-6
 
 end
 

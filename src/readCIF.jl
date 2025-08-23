@@ -1,6 +1,6 @@
 module readCIF
 
-export get_spin_center, get_coordinates_nuclear_spins, get_coordinates, set_supercell_list, get_bath_list, get_list_ligand_atoms
+export get_spin_center, get_coordinates_nuclear_spins, get_coordinates, set_supercell_list, get_bath_list, get_list_ligand_atoms, symbol_to_atomic_number
 
 using AtomsIO
 using LinearAlgebra
@@ -292,33 +292,55 @@ function get_list_ligand_atoms(r_max_ligand_atoms::Float64,lattice,coords_ligand
 end
 
 
-# quick testing - remove or comment out before using as module
-#cif_file = "/home/suchaneck/masterarbeit/cif_files/vopc.cif"
-#atomic_number_metal = 23
-#atomic_number_nuclei = 1
-#r_min = 0.0
-#r_max = 10.0
+# A little helper routine to get the atomic number for each symbols
+# courtesy of chatGPT :)
+# Map of chemical symbol (lowercase) → atomic number
+const SYMBOL_TO_Z = Dict{String,Int}(
+    "h"=>1,  "he"=>2,
+    "li"=>3, "be"=>4, "b"=>5,  "c"=>6,  "n"=>7,  "o"=>8,  "f"=>9,  "ne"=>10,
+    "na"=>11,"mg"=>12,"al"=>13,"si"=>14,"p"=>15, "s"=>16, "cl"=>17,"ar"=>18,
+    "k"=>19, "ca"=>20,"sc"=>21,"ti"=>22,"v"=>23, "cr"=>24,"mn"=>25,"fe"=>26,
+    "co"=>27,"ni"=>28,"cu"=>29,"zn"=>30,"ga"=>31,"ge"=>32,"as"=>33,"se"=>34,
+    "br"=>35,"kr"=>36,"rb"=>37,"sr"=>38,"y"=>39, "zr"=>40,"nb"=>41,"mo"=>42,
+    "tc"=>43,"ru"=>44,"rh"=>45,"pd"=>46,"ag"=>47,"cd"=>48,"in"=>49,"sn"=>50,
+    "sb"=>51,"te"=>52,"i"=>53, "xe"=>54,"cs"=>55,"ba"=>56,"la"=>57,"ce"=>58,
+    "pr"=>59,"nd"=>60,"pm"=>61,"sm"=>62,"eu"=>63,"gd"=>64,"tb"=>65,"dy"=>66,
+    "ho"=>67,"er"=>68,"tm"=>69,"yb"=>70,"lu"=>71,"hf"=>72,"ta"=>73,"w"=>74,
+    "re"=>75,"os"=>76,"ir"=>77,"pt"=>78,"au"=>79,"hg"=>80,"tl"=>81,"pb"=>82,
+    "bi"=>83,"po"=>84,"at"=>85,"rn"=>86,"fr"=>87,"ra"=>88,"ac"=>89,"th"=>90,
+    "pa"=>91,"u"=>92, "np"=>93,"pu"=>94,"am"=>95,"cm"=>96,"bk"=>97,"cf"=>98,
+    "es"=>99,"fm"=>100,"md"=>101,"no"=>102,"lr"=>103,"rf"=>104,"db"=>105,
+    "sg"=>106,"bh"=>107,"hs"=>108,"mt"=>109,"ds"=>110,"rg"=>111,"cn"=>112,
+    "nh"=>113,"fl"=>114,"mc"=>115,"lv"=>116,"ts"=>117,"og"=>118
+)
 
-#lattice,coord_electron_spin,coords_nuclear_spins_unit_cell = get_coordinates(cif_file,atomic_number_metal,atomic_number_nuclei)
+"""
+    symbol_to_atomic_number(symbol::AbstractString; missing=:error)
 
-#cell_list = set_supercell_list(r_max,lattice)
+Return the atomic number for a chemical symbol (case-insensitive).
 
-#print("cell_list:\n")
-#print(cell_list)
-#print("\n")
+- If the symbol is unknown:
+  - `missing = :error` (default) throws an `ArgumentError`.
+  - `missing = :nothing` returns `nothing`.
+  - `missing = some_value` returns `some_value`.
 
-#supercell = build_supercell(cell_list,lattice,coords_nuclear_spins_unit_cell)
+# Examples
+julia> symbol_to_atomic_number("He")
+2
 
-#print("supercell:\n")
-#print(supercell)
-#print("\n")
+julia> symbol_to_atomic_number("au")
+79
 
-#coordinates_nuclear_spins,distance_coordinates_el_nucs = get_bath_list(r_min,r_max,lattice,coords_nuclear_spins_unit_cell,coord_electron_spin)
+julia> symbol_to_atomic_number("Xx"; missing = :nothing)
+nothing
+"""
+function symbol_to_atomic_number(symbol::AbstractString; missing=:error)
+    key = lowercase(strip(symbol))
+    z = get(SYMBOL_TO_Z, key, nothing)
+    z === nothing || return z
+    missing === :error && throw(ArgumentError("Unknown chemical symbol: $symbol"))
+    return missing === :nothing ? nothing : missing
+end
 
-#print("coordinates of the nuclear spins of the bath: \n")
-#print(coordinates_nuclear_spins)
-
-#print("distance coordinates between the spin center and nuclear bath spins: \n")
-#print(distance_coordinates_el_nucs)
 
 end
