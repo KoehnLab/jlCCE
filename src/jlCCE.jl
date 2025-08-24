@@ -872,38 +872,39 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         end
 
     else
-
-        print("entered threaded route\n")
         
-        # block the pair list among the threads
-        blocks = Iterators.partition(1:n_pairs, n_pairs ÷ Threads.nthreads())
-        #print(blocks,"\n")
-        tasks = map(blocks) do block
+        # get number of threads and prepare result array for each thread
+        nthreads = Threads.nthreads()
+        int_thread = [ones(n_time_step) for _ in 1:nthreads]
 
-            Threads.@spawn begin
-                int_block = ones(n_time_step)
-                for ipair in block
-                    n = pair_list[ipair][1]
-                    m = pair_list[ipair][2]
+        @printf "... Entered threaded route (nthreads = %i)\n" nthreads
 
-                    r1 = distance_el_nuc_traf[n]
-                    r2 = distance_el_nuc_traf[m]
-                    A_n = A_list[n]
-                    A_m = A_list[m]
-                    nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+        # unset BLAS multithreading
+        n_BLAS_threads = BLAS.get_num_threads()
+        BLAS.set_num_threads(1)
 
-                    int_block = int_block .* nne_cont
-                end
-                int_block
-            end
+        # parallel loop
+        Threads.@threads for ipair in eachindex(pair_list)
+
+            thread_id = Threads.threadid()
+
+            n = pair_list[ipair][1]
+            m = pair_list[ipair][2]
+
+            r1 = distance_el_nuc_traf[n]
+            r2 = distance_el_nuc_traf[m]
+
+            A_n = A_list[n]
+            A_m = A_list[m]
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+
+            int_thread[thread_id] .*= nne_cont
         end
+        # multiply contributions from threads:
+        intensity_CCE2 = reduce(.*, int_thread)
 
-        # get all the results ...
-        int_blocks = fetch.(tasks)
-        # ... and accumulate them
-        for int in int_blocks
-            intensity_CCE2 = intensity_CCE2 .* int
-        end
+        # reset BLAS
+        BLAS.set_num_threads(n_BLAS_threads)
 
     end
 
