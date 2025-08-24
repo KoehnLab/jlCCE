@@ -6,6 +6,7 @@ using DetermineMagneticAxes
 using RotationMatrices
 using Tables, CSV
 using BenchmarkTools
+using Printf
 
 # determine magnetic axes from geometry
 spinsystem = SpinSystem("cudbm2.pdb","Pd",1)
@@ -39,12 +40,14 @@ spinsystem.pair_log_file = "pair_log.txt"
 # run CCE - determine the Hahn echo intensity
 times,intensity = cce(spinsystem)
 print("\n")
-print("Simulation times:    ",times,"\n")
-print("Simulated intensity: ",intensity,"\n")
+print("      tau/µs      2*tau/µs        s(2*tau)\n")
+for (tau,sHE) in zip(times,intensity)
+    @printf " %12.6f  %12.6f   %12.6e\n" tau*1e6 2*tau*1e6 sHE
+end
 print("\n")
 # determine the coherence time Tm
 Tm = 2*get_decay_time(times,intensity)*10^6
-println("Simulated coherence time: ",Tm,"\n")
+@printf "Simulated coherence time: %12.6f µs\n\n" Tm
 
 
 
