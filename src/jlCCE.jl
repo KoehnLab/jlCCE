@@ -364,7 +364,8 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
     for n in 1:n_nuc-1
         for m in n+1:n_nuc
             # determine R,r12 to compare it with the parameter space screening 
-            r = norm((distance_coordinates_el_nucs[n]))
+            r_mean = (distance_coordinates_el_nucs[m] + distance_coordinates_el_nucs[n])/2
+            r = norm(r_mean)
             push!(R,r)
             r_nm = (distance_coordinates_el_nucs[m] - distance_coordinates_el_nucs[n]) 
             r12 = norm(r_nm)
