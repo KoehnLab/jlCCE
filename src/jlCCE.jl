@@ -354,13 +354,15 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
     print("Screened number of pairs:      ",n_pairs,"\n")
     print("Screening distance was: ",r_max_bath/aacm," Å\n\n")
 
+    f = open("pair_contributions.txt", "w")
+
     # initialize Intensity to 1. for all times
     intensity = ones(n_time_step)
-    R = []
-    r_12 = []
-    modulation_depth = []
-    nzq_frequency = []
-    pair_contribution = []
+    #R = []
+    #r_12 = []
+    #modulation_depth = []
+    #nzq_frequency = []
+    #pair_contribution = []
 
     # compute the coupling constant b and the values of c and omega for each pair of bath nuclei 
     # compute the pair intensity for all t values of the simulation for each pair of bath nuclei 
@@ -370,13 +372,14 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
             # determine R,r12 to compare it with the parameter space screening 
             r_mean = (distance_coordinates_el_nucs[m] + distance_coordinates_el_nucs[n])/2
             r_norm = norm(r_mean)
-            push!(R,r_norm)
+            #push!(R,r_norm)
             r_nm = (distance_coordinates_el_nucs[m] - distance_coordinates_el_nucs[n]) 
             r_nm_norm = norm(r_nm)
-            push!(r_12,r_nm_norm)
+            #push!(r_12,r_nm_norm)
             if norm(r_nm) > r_max_bath
                 continue
             end
+            @printf(f,"%12.6f %12.6f ", r_norm/aacm, r_nm_norm/aacm)
             # test r_max_bath
             #println("Test r_max_bath settings: ", norm(r_nm))
             r_nm_x_B0 = cross(r_nm, B0)
@@ -389,13 +392,14 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
             #c_nm = (A_n[n] - A_n[m]) / (b_nm)
             #println("c_nm: ", c_nm)
             lambda_nm = 4 * (c_nm^2/(1+c_nm^2)^2)
-            push!(modulation_depth,lambda_nm)
+            #push!(modulation_depth,lambda_nm)
 	        w_nm = 2. * b_nm * sqrt(1 + c_nm^2)
             #w_nm = 0.5 * sqrt( b_nm^2 + (A_n[n] - A_n[m])^2)  
-            push!(nzq_frequency,w_nm)  
+            #push!(nzq_frequency,w_nm)  
+            @printf(f, "%18.8e %18.8e ", lambda_nm, w_nm)
             #print("Nzq freq: ",w_nm)
             #println("w_nm: ",w_nm)
-	    if use_exp
+	        if use_exp
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
                     intensity[j] = intensity[j] * exp(v_nm)
@@ -403,17 +407,20 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,r_max_bath,gamma_n,g
             else
                 for j in 1:size(time_hahn_echo)[1]
                     v_nm = -((c_nm^2) / (1 + c_nm^2)^2) * (cos(w_nm * time_hahn_echo[j]) - 1)^2
-                    #v_nm = 1 - lambda_nm * sin(1/4 * w_nm * time_hahn_echo[j])^4
-                    push!(pair_contribution,v_nm) 
+                    #v_nm = 1 - lambda_nm * sin(1/2 * w_nm * time_hahn_echo[j])^4
+                    #push!(pair_contribution,v_nm) 
+                    @printf(f, "%18.8e ", 1+v_nm) 
                     intensity[j] = intensity[j] * (1 + v_nm)
                     #intensity[j] = intensity[j] * v_nm
 		            #println("Pair contribution & intensity: ",v_nm," ",intensity)
                 end
             end 
+            print(f,"\n")
         end
     end        
-     
-    return R,r_12,modulation_depth,nzq_frequency,pair_contribution,intensity
+    close(f) 
+    #return R,r_12,modulation_depth,nzq_frequency,pair_contribution,intensity
+    return intensity
 end
 
 """
