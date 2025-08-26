@@ -20,7 +20,7 @@ spinsystem = SpinSystem("../../cif_files/pddbm2.pdb","Pd",1)
 
 # define the magnetic field
 B0 = [0.,0.,1.]
-theta = 0.
+theta = 90.
 phi = 0.
 rot_mat = rotate_solid(deg2rad(theta),deg2rad(phi))
 spinsystem.B0 = R_m * (rot_mat * B0)
@@ -37,14 +37,14 @@ spinsystem.r_max = 35.0
 spinsystem.r_min = 0.
 spinsystem.r_max_bath = 10.
 spinsystem.t_min = 0.
-spinsystem.t_max = 15e-6 # s
-spinsystem.n_time_step = 50
+spinsystem.t_max = 10e-6 # s
+spinsystem.n_time_step = 10
 spinsystem.use_exp = false
 spinsystem.simulation_type="highfield_analytic"
 
 # run
 # run CCE - determine the Hahn echo intensity
-times,R,r_12,intensity = cce(spinsystem)
+times,intensity = cce(spinsystem)
 print("\n")
 print("Simulated intensity: ",intensity,"\n")
 print("\n")
@@ -52,7 +52,7 @@ print("\n")
 Tm = 2*get_decay_time(times,intensity)*10^6
 println("Simulated coherence time: ",Tm,"\n")
 
-CSV.write("distances_cudbm2.csv", Tables.table([R r_12])) 
+#CSV.write("distances_cudbm2.csv", Tables.table([R r_12])) 
 
 #CSV.write("HEsignal_cudbm2.csv", Tables.table([times intensity]))
 
