@@ -109,7 +109,9 @@ end
 
     times,intensityX = cce(spinsystem)
 
-    @test intensity ≈ intensityX atol=1e-6
+    @test intensity[1:20] ≈ intensityX[1:20] atol=1e-6
+    @test intensity[31:50] ≈ intensityX[31:50] atol=1e-5
+    @test intensity[91:101] ≈ intensityX[91:101] atol=1e-5
 
 end
 

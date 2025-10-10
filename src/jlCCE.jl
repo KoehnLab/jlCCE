@@ -506,11 +506,20 @@ function e_contribution(dim,Hmag,Mmat,SX,rho0,time_he)
     # initial signal0
     signal_0 = get_signal(mx,my)
 
+    # propagate using the eigenbasis:
+    Hev, UH = eigen(Hmat)
+    # initialise kernel matrix
+    K = zeros(ComplexF64,dim,dim)
+
     signal = zeros(nt)
     for idx in 1:nt
 
-        Arg = - (1im * time_he[idx]) * Hmat
-        Ut = exp(Arg)
+        # set up kernel
+        for j in 1:dim
+            K[j,j] = exp(-1im*time_he[idx]*Hev[j])
+        end
+        # get time propagator
+        Ut = UH * K * adjoint(UH)
 
         U = Ut * sigmaX * Ut
 
@@ -561,12 +570,21 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,SX,
 
     # initial signal0
     signal_0 = get_signal(mx,my)
-    
+
+    # propagate using the eigenbasis:
+    Hev, UH = eigen(Hmat)
+    # initialise kernel matrix
+    K = zeros(ComplexF64,dim,dim)
+
     signal = zeros(nt)
     for idx in 1:nt
 
-        Arg = - (1im * time_he[idx]) * Hmat
-        Ut = exp(Arg)
+        # set up kernel
+        for j in 1:dim
+            K[j,j] = exp(-1im*time_he[idx]*Hev[j])
+        end
+        # get time propagator
+        Ut = UH * K * adjoint(UH)
 
         U = Ut * sigmaX * Ut
 
@@ -628,11 +646,20 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
     # initial signal
     signal_0 = get_signal(mx,my)
 
+    # propagate using the eigenbasis:
+    Hev, UH = eigen(Hmat)
+    # initialise kernel matrix
+    K = zeros(ComplexF64,dim,dim)
+
     signal = zeros(nt)
     for idx in 1:nt
 
-        Arg = - (1im * time_he[idx]) * Hmat
-        Ut = exp(Arg)
+        # set up kernel
+        for j in 1:dim
+            K[j,j] = exp(-1im*time_he[idx]*Hev[j])
+        end
+        # get time propagator
+        Ut = UH * K * adjoint(UH)
 
         U = Ut * sigmaX * Ut
 
@@ -913,11 +940,6 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         end
 
         intensity_CCE0 = e_contribution(dim_el,Hmag0,Mmat0,SX,rho0_el,time_hahn_echo)
-
-        # ensure that we do not exceed the 1.0
-        for it in 1:n_time_step
-            intensity_CCE0[it] = min(1.0,intensity_CCE0[it])
-        end
 
         # intensity correction for CCE2
         intensity_correction = intensity_CCE0.^n_pairs
