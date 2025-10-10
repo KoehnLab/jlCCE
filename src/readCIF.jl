@@ -26,11 +26,14 @@ function get_spin_center(cif_file::String,atomic_number_metal::Int,idx_metal::In
     system = load_system(cif_file)
 
     # coordinates in unit cell and translation vectors (lattice)
-    coords_atoms_unit_cell = ustrip.(position(system))
-    lattice = ustrip.(system.bounding_box)
+    # OLD: coords_atoms_unit_cell = ustrip.(position(system))
+    # OLD: lattice = ustrip.(system.bounding_box)
+    coords_atoms_unit_cell = ustrip.(position(system,1:length(system)))
+    lattice = ustrip.(cell_vectors(system))
 
     # atomic numbers for identifying spin centers
-    atomic_n = atomic_number(system)
+    # OLD: atomic_n = atomic_number(system)
+    atomic_n = atomic_number(system,1:length(system))
 
     # get the coordinates of the spin center on the metal atom
     idx_list = findall(x -> x==atomic_number_metal,atomic_n)
@@ -62,10 +65,12 @@ function get_coordinates_nuclear_spins(cif_file::String,atomic_number_nuclei::In
     system = load_system(cif_file)
 
     # coordinates in unit cell and translation vectors (lattice)
-    coords_atoms_unit_cell = ustrip.(position(system))
+    # OLD: coords_atoms_unit_cell = ustrip.(position(system))
+    coords_atoms_unit_cell = ustrip.(position(system,1:length(system)))
 
     # atomic numbers for identifying spin centers
-    atomic_n = atomic_number(system)
+    # OLD: atomic_n = atomic_number(system)
+    atomic_n = atomic_number(system,1:length(system))
 
     # get the coordinates of all bath spins
     idx_nuclei = findall(x -> x==atomic_number_nuclei,atomic_n)
@@ -97,13 +102,16 @@ function get_coordinates(cif_file::String,atomic_number_metal::Int,idx_metal::In
     #print("System: ",system,"\n")
 
     # coordinates in unit cell and translation vectors (lattice)
-    coords_atoms_unit_cell = ustrip.(position(system))
-    lattice = ustrip.(system.bounding_box)
+    # OLD: coords_atoms_unit_cell = ustrip.(position(system))
+    coords_atoms_unit_cell = ustrip.(position(system,1:length(system)))
+    # OLD: lattice = ustrip.(system.bounding_box)
+    lattice = ustrip.(cell_vectors(system))
     
     # unused:
     # atoms  = atomic_symbol(system)
     # atomic numbers for identifying spin centers
-    atomic_n = atomic_number(system)
+    # OLD_ atomic_n = atomic_number(system)
+    atomic_n = atomic_number(system,1:length(system))
     #print("atomic_n:",atomic_n,"\n")
     
     # get the coordinates of the spin center on the metal atom
