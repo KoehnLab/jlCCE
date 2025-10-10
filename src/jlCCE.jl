@@ -60,8 +60,13 @@ mutable struct SpinSystem
     t_max::Float64
     # number of time steps in interval
     n_time_step::Int
+    set_custom_times::Bool
+    times::Vector{Float64}
     report_pair_contrib::Bool
     pair_log_file::String
+    # select a range of nuclei
+    select::Bool
+    rselect::Vector{Float64}
 end
 
 # convenient constructor with defaults for all but the first 3 parameters
@@ -70,14 +75,16 @@ SpinSystem(coord_file,spin_center,spin_center_index) = SpinSystem(
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,"pair_log.txt")
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,[5e-6],false,"pair_log.txt",
+    false,[0.0,50.0,0.0,100.0])
 
 SpinSystem(coord_file,spin_center,spin_center_index,nuc_spin_bath) = SpinSystem(
     coord_file,spin_center,spin_center_index,nuc_spin_bath,
     "highfield_analytic",false,true,
     0.5,[2.0,2.0,2.0],[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0],
     0.5,5.58569468,
-    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,"pair_log.txt")
+    [0.,0.,1.],0.0,50.0,100.0,0.0,1e-3,25,false,[5e-6],false,"pair_log.txt",
+    false,[0.0,50.0,0.0,100.0])
 
 
 """
@@ -233,7 +240,31 @@ function cce(system::SpinSystem)
     @printf " Nuclear g factor:             %10.6f \n\n" system.gn_spin_bath 
 
     # set time for the simulation (corresponds to delay time tau)
-    time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
+    if ! system.set_custom_times
+        @printf "Setting delay times (tau):\n"
+        @printf "t_min = %12.3f µs\n" system.t_min*1e6
+        @printf "t_max = %12.3f µs\n" system.t_max*1e6
+        @printf "number of time steps: %6i\n" system.n_time_step
+        time_hahn_echo = collect(range(system.t_min,system.t_max,system.n_time_step))
+        if system.n_time_step < 4
+            @printf "Times: ["
+            for idx in 1:system.n_time_step-1
+                @printf " %12.3f, " time_hahn_echo[idx]*1e6
+            end
+            @printf "%12.3f ] µs\n" time_hahn_echo[system.n_time_step]*1e6
+        else
+            @printf "Times: [ %12.3f, %12.3f, ..., %12.3f ] µs\n" time_hahn_echo[1]*1e6 time_hahn_echo[2]*1e6 time_hahn_echo[system.n_time_step]*1e6
+        end
+    else
+        @printf "Setting custom delay times (tau):\n"
+        time_hahn_echo = system.times
+        n_time_step = size(time_hahn_echo)[1]
+        @printf "Times: ["
+        for idx in 1:n_time_step-1
+            @printf " %12.3f, " time_hahn_echo[idx]*1e6
+        end
+        @printf "%12.3f ] µs\n" time_hahn_echo[n_time_step]*1e6
+    end
 
     if system.simulation_type == "highfield_analytic"
 
@@ -256,21 +287,22 @@ function cce(system::SpinSystem)
         intensity = cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,
                                     gamma_n,gamma_electron_sc,time_hahn_echo,system)
         # dummies for iCCE1 and iCCE2
+        iCCE0 = ones(size(time_hahn_echo))
         iCCE1 = ones(size(time_hahn_echo))
         iCCE2 = intensity
     elseif system.simulation_type == "exact"
         if system.report_pair_contrib
             error("pair contribution report only implemented for analytic model")
         end
-        intensity,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,
+        intensity,iCCE0,iCCE1,iCCE2 = cce_exact(distance_coordinates_el_nucs,n_nuc,
                 gamma_n,gamma_electron,time_hahn_echo,system)
     else
         print("Unkonwn simulation type: ",system.simulation_type,"\n")
-        intensity,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
+        intensity,iCCE0,iCCE1,iCCE2 = zeros(size(time_hahn_echo))
     end
 
     # return intensity and time
-    return time_hahn_echo,intensity,iCCE1,iCCE2
+    return time_hahn_echo,intensity,iCCE0,iCCE1,iCCE2
 end
 
 """
@@ -331,7 +363,8 @@ function cce_hf_analytic(distance_coordinates_el_nucs,n_nuc,
     end
 
     # set up list of pairs
-    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath,
+                                                      system.select,system.rselect)
 
     @printf "Total number of pairs in bath: %12i\n" n_nuc*(n_nuc-1)÷2
     @printf "Screened number of pairs:      %12i\n" n_pairs
@@ -441,13 +474,66 @@ function print_matrix(title,mat)
 
 end
 
+"""
+    get_signal(mx,my)
+
+wrapper function for consistent definition of detected signal
+"""
+function get_signal(mx,my)
+     return sqrt(mx*mx + my*my)
+     #return abs(mx)
+end
+
+
+"""
+    e_contribution(various args)
+
+core routine for "exact" propagation of free spin system (internal use only)
+"""
+function e_contribution(dim,Hmag,Mmat,SX,rho0,time_he)
+
+    nt = size(time_he)[1]
+
+    # only magnetic field contribution
+    Hmat = Hmag
+
+    # Sx operator for spin (emulating ideal π pulse)
+    sigmaX = SX*2.0
+
+    mx = real(tr(Mmat[1]*rho0))
+    my = real(tr(Mmat[2]*rho0))
+
+    # initial signal0
+    signal_0 = get_signal(mx,my)
+
+    signal = zeros(nt)
+    for idx in 1:nt
+
+        Arg = - (1im * time_he[idx]) * Hmat
+        Ut = exp(Arg)
+
+        U = Ut * sigmaX * Ut
+
+        rho_tau = U * rho0 * adjoint(U)
+
+        mx = real(tr(Mmat[1]*rho_tau))
+        my = real(tr(Mmat[2]*rho_tau))
+
+        signal[idx] = get_signal(mx,my)/signal_0
+
+    end
+
+    return signal
+
+end
+
 
 """
     n_e_contribution(various args)
 
 core routine for "exact" propagation of 2-particle system (internal use only)
 """
-function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,rho0,time_he)
+function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,SX,rho0,time_he)
 
     dim = dim_nuc*dim_el
     nt = size(time_he)[1]
@@ -468,16 +554,14 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,rho
     Hmat += Hmag
 
     # Sx operator for spin (emulating ideal π pulse)
-    sigmaX = kron(Smat[1],I1)*2
+    sigmaX = kron(SX,I1)*2.0
 
-    mx = tr(Mmat[1]*rho0)
-    my = tr(Mmat[2]*rho0)
+    mx = real(tr(Mmat[1]*rho0))
+    my = real(tr(Mmat[2]*rho0))
 
-    #print_matrix("rho0",rho0)
-
-    # initial signal
-    signal_0 = 2*real(mx+1im*my)
-
+    # initial signal0
+    signal_0 = get_signal(mx,my)
+    
     signal = zeros(nt)
     for idx in 1:nt
 
@@ -488,11 +572,11 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,rho
 
         rho_tau = U * rho0 * adjoint(U)
 
-        mx = tr(Mmat[1]*rho_tau)
-        my = tr(Mmat[2]*rho_tau)
+        mx = real(tr(Mmat[1]*rho_tau))
+        my = real(tr(Mmat[2]*rho_tau))
 
-        signal[idx] = 2*real(mx+1im*my)/signal_0
-        
+        signal[idx] = get_signal(mx,my)/signal_0
+
     end
 
     return signal
@@ -506,7 +590,7 @@ end
 
 core routine for "exact" propagation of 3-particle system (internal use only)
 """
-function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Imat,rho0,time_he)
+function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Imat,SX,rho0,time_he)
 
     dim = dim_nuc^2*dim_el
     nt = size(time_he)[1]
@@ -522,10 +606,6 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
 
     B = fact * (I(3) - 3 * rn*transpose(rn))
 
-    #print_matrix("A1",A_1)
-    #print_matrix("A2",A_2)
-    #print_matrix("B",B)
-
     # interaction contribution
     Hmat = zeros(dim,dim)
     for i in 1:3
@@ -536,23 +616,17 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
         end
     end
 
-    #print_matrix("Hmat:",Hmat)
-
     # add magnetic contribution
     Hmat += Hmag
 
-    #print_matrix("Hmag:",Hmag)
-
     # Sx operator for spin (emulating ideal π pulse)
-    sigmaX = kron(Smat[1],kron(I1,I1))*2
+    sigmaX = kron(SX,kron(I1,I1))*2.0
 
-    mx = tr(Mmat[1]*rho0)
-    my = tr(Mmat[2]*rho0)
-
-    #print_matrix("rho0",rho0)
+    mx = real(tr(Mmat[1]*rho0))
+    my = real(tr(Mmat[2]*rho0))
 
     # initial signal
-    signal_0 = 2*real(mx+1im*my)
+    signal_0 = get_signal(mx,my)
 
     signal = zeros(nt)
     for idx in 1:nt
@@ -564,10 +638,10 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
 
         rho_tau = U * rho0 * adjoint(U)
 
-        mx = tr(Mmat[1]*rho_tau)
-        my = tr(Mmat[2]*rho_tau)
+        mx = real(tr(Mmat[1]*rho_tau))
+        my = real(tr(Mmat[2]*rho_tau))
 
-        signal[idx] = 2*real(mx+1im*my)/signal_0
+        signal[idx] = get_signal(mx,my)/signal_0
         
     end
 
@@ -643,7 +717,7 @@ max. distance to be considered.
 Return a list of unique pairs and a list which states to how many pairs a given spin 
 contributes 
 """
-function make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+function make_pair_list(distance_coordinates_el_nucs,r_max_bath,select,rselect)
 
     n_nuc = size(distance_coordinates_el_nucs,1)
 
@@ -663,6 +737,16 @@ function make_pair_list(distance_coordinates_el_nucs,r_max_bath)
             if norm(r12) < 0.1*aacm
                 println("This must be wrong!")
                 error("Nonsensical spin bath coordinates!")
+            end
+            if select
+                if norm(r12) < rselect[3]*aacm || norm(r12) > rselect[4]*aacm
+                    continue
+                end
+                ravg = norm(0.5*(distance_coordinates_el_nucs[i] + distance_coordinates_el_nucs[j]))
+                if ravg < rselect[1]*aacm || ravg > rselect[2]*aacm
+                    continue
+                end
+
             end
 
             n_pairs += 1
@@ -696,16 +780,17 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
     mag_axes = system.magnetic_axes
 
-    n_time_step = size(time_hahn_echo)
+    n_time_step = size(time_hahn_echo)[1]
 
     intensity = ones(n_time_step)
+    intensity_CCE0 = ones(n_time_step)
     intensity_CCE1 = ones(n_time_step)
     intensity_CCE2 = ones(n_time_step)
     intensity_correction = ones(n_time_step)
 
     # Here, it is more convenient to keep the magnetic field at (0,0,1) and to
     # transform the nuclear coordinates.
-    # This is because the treatment uses the rotation wave approximation and
+    # This is because the treatment employs the rotating wave approximation and
     # uses the magnetic field as the main quantization axis z
     
     # field strength
@@ -720,7 +805,12 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     display(Rmat)
     print("\n\n")
 
-    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath)
+    println("B field transformed:")
+    display(Rmat' * B00)
+    print("\n")
+
+    n_pairs, pair_list, n_pair_contr = make_pair_list(distance_coordinates_el_nucs,r_max_bath,
+                                                      system.select,system.rselect)
 
     @printf "Total number of pairs in bath: %12i\n" n_nuc*(n_nuc-1)÷2
     @printf "Screened number of CCE2 pairs: %12i\n" n_pairs
@@ -742,6 +832,15 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     mag_axes_t = Rmat' * mag_axes
     gamma_t = mag_axes_t * gamma_t * mag_axes_t'
 
+    println("mag_axes:")
+    display(mag_axes)
+    print("\n")
+
+    println("mag_axes_t:")
+    display(mag_axes_t)
+    print("\n")
+
+
     print("gamma_t: \n")
     display(gamma_t)
     print("\n")
@@ -751,6 +850,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     print("\n")
     print("computing hyperfine couplings ...\n")
 
+    # compute list of all hyperfine interactions
     A_list = []
     for n in 1:n_nuc
         r1 = distance_el_nuc_traf[n]
@@ -761,21 +861,31 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     dim_el = trunc(Int,(2*s_el+1))
     dim_nuc = trunc(Int,(2*s_nuc+1))
 
+    # get all spin matrices
     Smat = []
     push!(Smat,sx_mat(s_el))
     push!(Smat,sy_mat(s_el))
     push!(Smat,sz_mat(s_el))
+    # and a unit matrix of the same dimension
     S1 = unit_mat(dim_el)
 
+    # get all spin matrices for nuclei
     Imat = []
     push!(Imat,sx_mat(s_nuc))
     push!(Imat,sy_mat(s_nuc))
     push!(Imat,sz_mat(s_nuc))
+    # and again a unit matrix of the same dimension
     I1 = unit_mat(dim_nuc)
 
     # initial spin state |+><+| (max. comp along X)
+    SX = zeros(dim_el,dim_el)
     if s_el == 0.5
-        rho0_el = ones(2,2).*0.5
+        # represent π/2 and π pulses (in lab system!)
+        # 2*SX will be used as ideal π pulse
+        SX = Smat[1]
+        vcSX = eigvecs(SX)
+        # init electronic system to situation after ideal π/2 pulse:
+        rho0_el = (vcSX[:,2]) * adjoint(vcSX[:,2])
     else
         error("S>0.5 not yet implemented")
         # TODO: diagonalize Sx and get eigenvector for -M state == |+> ; rho = |+><+|
@@ -783,6 +893,36 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         
     # initial nuclear state: all M equal likely (kT >> delta E)
     rho0_nuc = I1.*(1. / trunc(Int,2*s_nuc+1) )
+
+    # do lower order CCE (0 + 1); recommended, wrong results unless very high field
+    if system.do_cce1
+        # free evolution contribution
+        # (relevant for anisotropic systems)
+        Mmat0 = []
+        for i = 1:3
+            mat = zeros(dim_el,dim_el)
+            for j = 1:3
+                mat += Smat[j].*gamma_t[i,j]
+            end
+            push!(Mmat0,mat)
+        end
+        Hmag0 = zeros(dim_el,dim_el)
+        B0t = gamma_t' * B0
+        for i = 1:3
+            Hmag0 += Smat[i].*B0t[i]
+        end
+
+        intensity_CCE0 = e_contribution(dim_el,Hmag0,Mmat0,SX,rho0_el,time_hahn_echo)
+
+        # ensure that we do not exceed the 1.0
+        for it in 1:n_time_step
+            intensity_CCE0[it] = min(1.0,intensity_CCE0[it])
+        end
+
+        # intensity correction for CCE2
+        intensity_correction = intensity_CCE0.^n_pairs
+
+    end
     
     if system.do_cce1
         # CCE1 contrubutions
@@ -804,7 +944,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
         # magnetic field contribution is universal
         Hmag1 = zeros(dimH1,dimH1)
-        B0t = gamma_t' * B0
+        B0t = gamma_t' * B0 
         for i = 1:3
             Hmag1 += kron(Smat[i],I1).*B0t[i]
             Hmag1 += kron(S1,Imat[i]).*(B0[i]*gamma_n)
@@ -816,13 +956,24 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         for n in 1:n_nuc
             r1 = distance_el_nuc_traf[n]
             A_n = A_list[n]
-            ne_cont = n_e_contribution(dim_el,dim_nuc,gamma_n,r1,A_n,Hmag1,Mmat1,Smat,Imat,rho0,time_hahn_echo)
+            ne_cont = n_e_contribution(dim_el,dim_nuc,gamma_n,r1,A_n,Hmag1,Mmat1,Smat,Imat,SX,rho0,time_hahn_echo)
 
-            mult = n_pair_contr[n]
+            ne_cont ./= intensity_CCE0  # correct for CCE0 (free propagation)
+
+            ## ensure that we do not exceed the 1.0
+            #for it in 1:n_time_step
+            #    ne_cont[it] = min(1.0,ne_cont[it])
+            #end
+
             intensity_CCE1 = intensity_CCE1 .* ne_cont
+
+            # number of pairs to which this CCE1 increment will contribute
+            mult = n_pair_contr[n]
+            # update correction for CCE2
             intensity_correction = intensity_correction .* ne_cont.^mult
 
         end
+
     end
 
     print("\n")
@@ -835,7 +986,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     for i = 1:3
         mat = zeros(dimH,dimH)
         for j = 1:3
-           mat += kron(Smat[j],kron(I1,I1)).*gamma_t[i,j]
+            mat += kron(Smat[j],kron(I1,I1)).*gamma_t[i,j]
         end
         mat += kron(S1,kron(Imat[i],I1)).*gamma_n
         mat += kron(S1,kron(I1,Imat[i])).*gamma_n
@@ -866,7 +1017,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
             A_n = A_list[n]
             A_m = A_list[m]
-            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,SX,rho0,time_hahn_echo)
 
             intensity_CCE2 = intensity_CCE2 .* nne_cont
         end
@@ -896,7 +1047,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
             A_n = A_list[n]
             A_m = A_list[m]
-            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,rho0,time_hahn_echo)
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,SX,rho0,time_hahn_echo)
 
             int_thread[thread_id] .*= nne_cont
         end
@@ -910,9 +1061,9 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
     intensity_CCE2 = intensity_CCE2 ./ intensity_correction
 
-    intensity = intensity_CCE1 .* intensity_CCE2
+    intensity = intensity_CCE0 .* intensity_CCE1 .* intensity_CCE2
 
-    return intensity, intensity_CCE1, intensity_CCE2
+    return intensity, intensity_CCE0, intensity_CCE1, intensity_CCE2
 
 end
 
