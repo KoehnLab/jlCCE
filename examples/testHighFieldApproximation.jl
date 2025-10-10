@@ -1,10 +1,11 @@
 push!(LOAD_PATH,"../src")
 
 using jlCCE
+#      vvvvvvvvvv  you might need to install these in addition
 using Tables, CSV
 using DetermineMagneticAxes
 using RotationMatrices
-using BenchmarkTools
+#using BenchmarkTools
 using Printf
 using LinearAlgebra
 
@@ -53,7 +54,7 @@ println("Running simulation for 100 T")
 # and now the "exact" solutions
 spinsystem.simulation_type="exact"
     
-@time times,intensityEX,iCCE1,iCCE2 = cce(spinsystem)
+@time times,intensityEX,iCCE0,iCCE1,iCCE2 = cce(spinsystem)
 
 @printf "    2*tau/µs    High-Field         Exact\n"
 for (tau,intHFA,intEX) in zip(times,intensity,intensityEX)
@@ -61,6 +62,6 @@ for (tau,intHFA,intEX) in zip(times,intensity,intensityEX)
 end
 println("")
 
-CSV.write("cu_in_pd-dbm2-echo-100T.csv", Tables.table([times intensity intensityEX iCCE1 iCCE2]))
+CSV.write("cu_in_pd-dbm2-echo-100T.csv", Tables.table([times intensity intensityEX iCCE0 iCCE1 iCCE2]))
  
 println("All done ...")

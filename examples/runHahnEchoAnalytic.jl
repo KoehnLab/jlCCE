@@ -4,8 +4,8 @@ using jlCCE
 using jlCCEtools
 using DetermineMagneticAxes
 using RotationMatrices
-using Tables, CSV
-using BenchmarkTools
+#using Tables, CSV
+#using BenchmarkTools
 using Printf
 
 # determine magnetic axes from geometry
