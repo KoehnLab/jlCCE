@@ -453,7 +453,7 @@ function hyperfine(gamma_ten,gamma_n,r)
     rn = r ./ dist
     fact = gamma_n*hbar / dist^3
     
-    A = fact*(I(3) - 3 * rn*transpose(rn))
+    A = fact*(I(3) - 3.0 * rn*transpose(rn))
 
     # assuming this form of the HFC:  S^+ A I
     At = transpose(gamma_ten) * A 
@@ -490,15 +490,12 @@ end
 
 core routine for "exact" propagation of free spin system (internal use only)
 """
-function e_contribution(dim,Hmag,Mmat,SX,rho0,time_he)
+function e_contribution(dim,Hmag,Mmat,PI,rho0,time_he)
 
     nt = size(time_he)[1]
 
     # only magnetic field contribution
     Hmat = Hmag
-
-    # Sx operator for spin (emulating ideal π pulse)
-    sigmaX = SX*2.0
 
     mx = real(tr(Mmat[1]*rho0))
     my = real(tr(Mmat[2]*rho0))
@@ -521,7 +518,7 @@ function e_contribution(dim,Hmag,Mmat,SX,rho0,time_he)
         # get time propagator
         Ut = UH * K * adjoint(UH)
 
-        U = Ut * sigmaX * Ut
+        U = Ut * PI * Ut
 
         rho_tau = U * rho0 * adjoint(U)
 
@@ -542,13 +539,12 @@ end
 
 core routine for "exact" propagation of 2-particle system (internal use only)
 """
-function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,SX,rho0,time_he)
+function n_e_contribution(dim_el,dim_nuc,A_1,Hmag,Mmat,Smat,Imat,PI,rho0,time_he)
 
     dim = dim_nuc*dim_el
     nt = size(time_he)[1]
 
     # spin H for 2 spin system
-    S1 = unit_mat(dim_el)
     I1 = unit_mat(dim_nuc)
 
     # interaction contribution
@@ -562,8 +558,8 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,SX,
     # add magnetic contribution
     Hmat += Hmag
 
-    # Sx operator for spin (emulating ideal π pulse)
-    sigmaX = kron(SX,I1)*2.0
+    # Expand π pulse operator to tensor basis
+    PIexp = kron(PI,I1)
 
     mx = real(tr(Mmat[1]*rho0))
     my = real(tr(Mmat[2]*rho0))
@@ -586,7 +582,7 @@ function n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,Hmag,Mmat,Smat,Imat,SX,
         # get time propagator
         Ut = UH * K * adjoint(UH)
 
-        U = Ut * sigmaX * Ut
+        U = Ut * PIexp * Ut
 
         rho_tau = U * rho0 * adjoint(U)
 
@@ -608,7 +604,7 @@ end
 
 core routine for "exact" propagation of 3-particle system (internal use only)
 """
-function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Imat,SX,rho0,time_he)
+function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Imat,PI,rho0,time_he)
 
     dim = dim_nuc^2*dim_el
     nt = size(time_he)[1]
@@ -637,8 +633,8 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
     # add magnetic contribution
     Hmat += Hmag
 
-    # Sx operator for spin (emulating ideal π pulse)
-    sigmaX = kron(SX,kron(I1,I1))*2.0
+    # expand π pulse operator to full tensor basis
+    PIexp = kron(PI,kron(I1,I1))
 
     mx = real(tr(Mmat[1]*rho0))
     my = real(tr(Mmat[2]*rho0))
@@ -661,7 +657,7 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
         # get time propagator
         Ut = UH * K * adjoint(UH)
 
-        U = Ut * sigmaX * Ut
+        U = Ut * PIexp * Ut
 
         rho_tau = U * rho0 * adjoint(U)
 
@@ -905,12 +901,24 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     I1 = unit_mat(dim_nuc)
 
     # initial spin state |+><+| (max. comp along X)
-    SX = zeros(dim_el,dim_el)
+    PI = zeros(dim_el,dim_el)
+    # note: currently, we assume only interaction with electronic spin
+    # this is likely a good approximation, althoung in practice there might be
+    # cross talk to the nuclei
     if s_el == 0.5
         # represent π/2 and π pulses (in lab system!)
-        # 2*SX will be used as ideal π pulse
-        SX = Smat[1]
-        vcSX = eigvecs(SX)
+
+        # eigenvalues and vectors of Pauli matrix
+        #
+        evSX,vcSX = eigen(Smat[1]*2.0)
+        
+        # π pulse:
+        KPI = zeros(ComplexF64,2,2)
+        for i = 1:2
+            KPI[i,i] = exp(-0.5im*evSX[i]*π)
+        end
+        PI = vcSX * KPI * adjoint(vcSX)
+
         # init electronic system to situation after ideal π/2 pulse:
         rho0_el = (vcSX[:,2]) * adjoint(vcSX[:,2])
     else
@@ -929,7 +937,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         for i = 1:3
             mat = zeros(dim_el,dim_el)
             for j = 1:3
-                mat += Smat[j].*gamma_t[i,j]
+                mat -= Smat[j].*gamma_t[i,j]
             end
             push!(Mmat0,mat)
         end
@@ -939,7 +947,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
             Hmag0 += Smat[i].*B0t[i]
         end
 
-        intensity_CCE0 = e_contribution(dim_el,Hmag0,Mmat0,SX,rho0_el,time_hahn_echo)
+        intensity_CCE0 = e_contribution(dim_el,Hmag0,Mmat0,PI,rho0_el,time_hahn_echo)
 
         # intensity correction for CCE2
         intensity_correction = intensity_CCE0.^n_pairs
@@ -954,38 +962,35 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         dimH1 = dim_el * dim_nuc
 
         # set magnetic interaction matrix
+        # gamma_t is by default positive for electrons, so we need a minus sign
+        # for the nuclei, we assume that gamma_n carries the appropriate sign
         Mmat1 = []
         for i = 1:3
             mat = zeros(dimH1,dimH1)
             for j = 1:3
-                mat += kron(Smat[j],I1).*gamma_t[i,j]
+                mat -= kron(Smat[j],I1).*gamma_t[i,j]
             end
             mat += kron(S1,Imat[i]).*gamma_n
             push!(Mmat1,mat)
         end
 
         # magnetic field contribution is universal
+        # signs: H = - M B ... therefore signs are reversed relative to Mmat1 setup
         Hmag1 = zeros(dimH1,dimH1)
         B0t = gamma_t' * B0 
         for i = 1:3
             Hmag1 += kron(Smat[i],I1).*B0t[i]
-            Hmag1 += kron(S1,Imat[i]).*(B0[i]*gamma_n)
+            Hmag1 -= kron(S1,Imat[i]).*(B0[i]*gamma_n)
         end
 
         # set initial density matrix for 2-particle system    
         rho0 = kron(rho0_el,rho0_nuc)*(1. + 0*im)
 
         for n in 1:n_nuc
-            r1 = distance_el_nuc_traf[n]
             A_n = A_list[n]
-            ne_cont = n_e_contribution(dim_el,dim_nuc,gamma_n,r1,A_n,Hmag1,Mmat1,Smat,Imat,SX,rho0,time_hahn_echo)
+            ne_cont = n_e_contribution(dim_el,dim_nuc,A_n,Hmag1,Mmat1,Smat,Imat,PI,rho0,time_hahn_echo)
 
             ne_cont ./= intensity_CCE0  # correct for CCE0 (free propagation)
-
-            ## ensure that we do not exceed the 1.0
-            #for it in 1:n_time_step
-            #    ne_cont[it] = min(1.0,ne_cont[it])
-            #end
 
             intensity_CCE1 = intensity_CCE1 .* ne_cont
 
@@ -1004,11 +1009,13 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     dimH = dim_el * dim_nuc^2
 
     # Magnetic interaction matrix
+    # gamma_t is by default positive for electrons, so we need a minus sign
+    # for the nuclei, we assume that gamma_n carries the appropriate sign
     Mmat = []
     for i = 1:3
         mat = zeros(dimH,dimH)
         for j = 1:3
-            mat += kron(Smat[j],kron(I1,I1)).*gamma_t[i,j]
+            mat -= kron(Smat[j],kron(I1,I1)).*gamma_t[i,j]
         end
         mat += kron(S1,kron(Imat[i],I1)).*gamma_n
         mat += kron(S1,kron(I1,Imat[i])).*gamma_n
@@ -1016,12 +1023,13 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
     end
 
     # magnetic field contribution is universal
+    # signs: H = - M B ... therefore signs are reversed relative to Mmat1 setup
     Hmag = zeros(dimH,dimH)
     B0t = gamma_t' * B0
     for i = 1:3
         Hmag += kron(Smat[i],kron(I1,I1)).*B0t[i]
-        Hmag += kron(S1,kron(Imat[i],I1)).*(B0[i]*gamma_n)
-        Hmag += kron(S1,kron(I1,Imat[i])).*(B0[i]*gamma_n)
+        Hmag -= kron(S1,kron(Imat[i],I1)).*(B0[i]*gamma_n)
+        Hmag -= kron(S1,kron(I1,Imat[i])).*(B0[i]*gamma_n)
     end
 
     # set initial density matrix for 3-particle system    
@@ -1039,7 +1047,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
             A_n = A_list[n]
             A_m = A_list[m]
-            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,SX,rho0,time_hahn_echo)
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,PI,rho0,time_hahn_echo)
 
             intensity_CCE2 = intensity_CCE2 .* nne_cont
         end
@@ -1069,7 +1077,7 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
 
             A_n = A_list[n]
             A_m = A_list[m]
-            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,SX,rho0,time_hahn_echo)
+            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,PI,rho0,time_hahn_echo)
 
             int_thread[thread_id] .*= nne_cont
         end
