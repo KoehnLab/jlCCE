@@ -117,8 +117,14 @@ function cce(system::SpinSystem)
         # identify nuclear spin bath 
         if system.nuc_spin_bath == "H"
             atomic_number_nuclei = 1
+	elseif system.nuc_spin_bath == "C"
+	    atomic_number_nuclei = 6
+	elseif system.nuc_spin_bath == "N"
+            atomic_number_nuclei = 7
+	elseif system.nuc_spin_bath == "F"
+            atomic_number_nuclei = 9
         else 
-            print("Error only proton bath \n")
+            print("Error only 1H, 13C, 15N or 19F bath \n")
             exit()
         end
         print("Atom symbols for selecting spin bath: ",system.nuc_spin_bath,"\n")
