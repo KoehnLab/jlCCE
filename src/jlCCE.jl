@@ -117,14 +117,28 @@ function cce(system::SpinSystem)
         # identify nuclear spin bath 
         if system.nuc_spin_bath == "H"
             atomic_number_nuclei = 1
-	elseif system.nuc_spin_bath == "C"
-	    atomic_number_nuclei = 6
-	elseif system.nuc_spin_bath == "N"
+        elseif system.nuc_spin_bath == "B"
+	        atomic_number_nuclei = 5
+	    elseif system.nuc_spin_bath == "C"
+	        atomic_number_nuclei = 6
+	    elseif system.nuc_spin_bath == "N"
             atomic_number_nuclei = 7
-	elseif system.nuc_spin_bath == "F"
+        elseif system.nuc_spin_bath == "O"
+            atomic_number_nuclei = 8
+	    elseif system.nuc_spin_bath == "F"
             atomic_number_nuclei = 9
+        elseif system.nuc_spin_bath == "P"
+            atomic_number_nuclei = 15
+        elseif system.nuc_spin_bath == "S"
+            atomic_number_nuclei = 16
+        elseif system.nuc_spin_bath == "Cl"
+            atomic_number_nuclei = 17
+        elseif system.nuc_spin_bath == "Br"
+            atomic_number_nuclei = 35
+        elseif system.nuc_spin_bath == "I"
+            atomic_number_nuclei = 53
         else 
-            print("Error only 1H, 13C, 15N or 19F bath \n")
+            print("Error only H, B, C, N, O, F, P, S, Cl, Br or I bath. \n Used spin bath nuclei is not known. \n")
             exit()
         end
         print("Atom symbols for selecting spin bath: ",system.nuc_spin_bath,"\n")
