@@ -651,9 +651,8 @@ function n_n_e_contribution(dim_el,dim_nuc,gamma_n,r12,A_1,A_2,Hmag,Mmat,Smat,Im
     for idx in 1:nt
 
         # set up kernel
-        for j in 1:dim
-            K[j,j] = exp(-1im*time_he[idx]*Hev[j])
-        end
+        K[diagind(K)] .= exp.(-1im * time_he[idx] .* Hev)
+
         # get time propagator
         Ut = UH * K * adjoint(UH)
 
@@ -1064,25 +1063,34 @@ function cce_exact(distance_coordinates_el_nucs,n_nuc,
         n_BLAS_threads = BLAS.get_num_threads()
         BLAS.set_num_threads(1)
 
-        # parallel loop
-        Threads.@threads for ipair in eachindex(pair_list)
+        # divide work into chunks:
+        chunks = [collect(i:nthreads:length(pair_list)) for i in 1:nthreads]
 
-            thread_id = Threads.threadid()
+        # spawn tasks for the chunks
+        tasks = [
+            Threads.@spawn begin
+                int_thread = ones(n_time_step)
+                
+                for ipair in chunks[thread_id]
+                    n = pair_list[ipair][1]
+                    m = pair_list[ipair][2]
 
-            n = pair_list[ipair][1]
-            m = pair_list[ipair][2]
+                    r1 = distance_el_nuc_traf[n]
+                    r2 = distance_el_nuc_traf[m]
 
-            r1 = distance_el_nuc_traf[n]
-            r2 = distance_el_nuc_traf[m]
+                    A_n = A_list[n]
+                    A_m = A_list[m]
+                    nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,PI,rho0,time_hahn_echo)
 
-            A_n = A_list[n]
-            A_m = A_list[m]
-            nne_cont = n_n_e_contribution(dim_el,dim_nuc,gamma_n,r1-r2,A_n,A_m,Hmag,Mmat,Smat,Imat,PI,rho0,time_hahn_echo)
+                    int_thread .*= nne_cont
+                end
+                
+                int_thread
+             end for thread_id in 1:nthreads
+        ]
 
-            int_thread[thread_id] .*= nne_cont
-        end
         # multiply contributions from threads:
-        intensity_CCE2 = reduce(.*, int_thread)
+        intensity_CCE2 = reduce(.*, fetch.(tasks))
 
         # reset BLAS
         BLAS.set_num_threads(n_BLAS_threads)
